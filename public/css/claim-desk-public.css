@@ -11,7 +11,6 @@
     height: 100%;
     background: rgba(0, 0, 0, 0.6);
     z-index: 99999;
-    /* Woo uses high z-index */
     display: none;
     justify-content: center;
     align-items: center;
@@ -108,7 +107,6 @@
 
 .cd-scope-card:hover {
     border-color: #6200ea;
-    /* Primary Color */
     background: #f9f9ff;
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
@@ -178,6 +176,67 @@
     width: 60px;
     padding: 5px;
     text-align: center;
+}
+
+/* Step 3: Form */
+.cd-form-section {
+    margin-bottom: 20px;
+}
+
+.cd-form-section h4 {
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.cd-reasons-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.cd-reason-chip {
+    cursor: pointer;
+}
+
+.cd-reason-chip input {
+    display: none;
+}
+
+.cd-reason-chip span {
+    display: inline-block;
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    background: #fff;
+    transition: all 0.2s;
+}
+
+.cd-reason-chip input:checked+span {
+    background: #6200ea;
+    color: #fff;
+    border-color: #6200ea;
+}
+
+.cd-form-group {
+    margin-bottom: 15px;
+}
+
+.cd-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #444;
+}
+
+.cd-form-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.cd-req {
+    color: red;
 }
 
 /* Utility */

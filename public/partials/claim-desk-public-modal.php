@@ -26,7 +26,18 @@
 
             <!-- Step 3: Details -->
             <div id="cd-step-details" class="cd-step-view cd-hidden">
-                 <!-- Future -->
+                <p class="cd-step-instruction"><?php _e( 'Please provide more details.', 'claim-desk' ); ?></p>
+                
+                <form id="cd-details-form">
+                    <!-- Reasons Section -->
+                    <div class="cd-form-section">
+                        <h4><?php _e( 'Reason', 'claim-desk' ); ?> <span class="cd-req">*</span></h4>
+                        <div id="cd-reasons-container" class="cd-reasons-grid"></div>
+                    </div>
+
+                    <!-- Dynamic Fields Section -->
+                    <div id="cd-fields-container"></div>
+                </form>
             </div>
 
         </div>
@@ -34,6 +45,7 @@
         <div class="cd-modal-footer">
             <button class="button cd-modal-back cd-hidden"><?php _e( 'Back', 'claim-desk' ); ?></button>
             <button class="button button-primary cd-modal-next cd-hidden"><?php _e( 'Next', 'claim-desk' ); ?></button>
+            <button class="button button-primary cd-modal-submit cd-hidden"><?php _e( 'Submit Claim', 'claim-desk' ); ?></button>
         </div>
     </div>
     
@@ -53,6 +65,20 @@
                 <input type="number" class="cd-item-qty-input" min="1" max="{{max_qty}}" value="1">
                 <span class="cd-max-qty">/ {{max_qty}}</span>
             </div>
+        </div>
+    </script>
+
+    <script type="text/template" id="tmpl-cd-field-text">
+        <div class="cd-form-group">
+            <label>{{label}} {{required_mark}}</label>
+            <input type="{{type}}" name="{{slug}}" class="cd-form-input" {{required}}>
+        </div>
+    </script>
+    
+    <script type="text/template" id="tmpl-cd-field-textarea">
+        <div class="cd-form-group">
+            <label>{{label}} {{required_mark}}</label>
+            <textarea name="{{slug}}" class="cd-form-input" rows="4" {{required}}></textarea>
         </div>
     </script>
 

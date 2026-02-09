@@ -9,6 +9,7 @@
         currentOrder: 0,
         currentScope: null,
         selectedItems: {}, // { item_id: qty }
+        formData: {},
 
         init: function () {
             this.config = claim_desk_public.scopes;
@@ -21,13 +22,10 @@
             // Open Modal
             $(document).on('click', '.claim-desk-trigger', function (e) {
                 e.preventDefault();
-                // Extract Order ID from URL hash '#claim-order-123'
                 const href = $(this).attr('href');
                 if (href && href.indexOf('#claim-order-') !== -1) {
                     self.currentOrder = href.split('-').pop();
                     self.openModal();
-                } else {
-                    console.error('Claim Desk: Could not find Order ID');
                 }
             });
 
@@ -44,45 +42,52 @@
                 self.selectScope(slug);
             });
 
-            // Step 2: Item Checkbox
+            // Step 2: Item Checkbox & Qty
             $(document).on('change', '.cd-item-checkbox', function () {
                 const $row = $(this).closest('.cd-item-select-row');
                 const $qtyWrapper = $row.find('.cd-item-qty-wrapper');
 
                 if ($(this).is(':checked')) {
                     $qtyWrapper.removeClass('cd-hidden');
-                    // Add to selection
                     self.updateSelection($row);
                 } else {
                     $qtyWrapper.addClass('cd-hidden');
-                    // Remove from selection
                     const id = $row.data('id');
                     delete self.selectedItems[id];
                 }
                 self.updateButtons();
             });
 
-            // Step 2: Qty Change
             $(document).on('change input', '.cd-item-qty-input', function () {
                 const $row = $(this).closest('.cd-item-select-row');
                 self.updateSelection($row);
             });
 
+            // Step 3: Form Input Changes (to enable Submit)
+            $(document).on('change input', '#cd-details-form input, #cd-details-form textarea', function () {
+                // Future validation logic
+            });
+
             // Back Button
             $('.cd-modal-back').on('click', function () {
-                // Determine current step and go back
-                // Simple logic for now: If on Step 2, go to Step 1
                 if (!$('#cd-step-items').hasClass('cd-hidden')) {
                     self.showStep('scope');
+                } else if (!$('#cd-step-details').hasClass('cd-hidden')) {
+                    self.showStep('items');
                 }
             });
 
-            // Next Button
+            // Next Button (Step 2 -> 3)
             $('.cd-modal-next').on('click', function () {
-                // If on Step 2, go to Step 3
                 if (!$('#cd-step-items').hasClass('cd-hidden')) {
-                    alert('Going to Step 3 (Pending Implementation)');
+                    self.renderStep3();
+                    self.showStep('details');
                 }
+            });
+
+            // Submit Button
+            $('.cd-modal-submit').on('click', function () {
+                self.submitClaim();
             });
         },
 
@@ -94,9 +99,9 @@
 
         closeModal: function () {
             $('.cd-modal-overlay').removeClass('is-open');
-            // Reset state
             this.selectedItems = {};
             this.currentScope = null;
+            $('#cd-details-form')[0].reset();
         },
 
         renderScopes: function () {
@@ -157,12 +162,49 @@
             });
         },
 
+        renderStep3: function () {
+            const scopeConfig = this.config[this.currentScope];
+            const $reasons = $('#cd-reasons-container');
+            const $fields = $('#cd-fields-container');
+
+            $reasons.empty();
+            $fields.empty();
+
+            // Render Reasons
+            if (scopeConfig.reasons && scopeConfig.reasons.length > 0) {
+                scopeConfig.reasons.forEach(reason => {
+                    const html = `
+                        <label class="cd-reason-chip">
+                            <input type="radio" name="claim_reason" value="${reason.slug}">
+                            <span>${reason.label}</span>
+                        </label>
+                    `;
+                    $reasons.append(html);
+                });
+            } else {
+                $reasons.html('<p>No specific reasons defined.</p>');
+            }
+
+            // Render Fields
+            if (scopeConfig.fields && scopeConfig.fields.length > 0) {
+                scopeConfig.fields.forEach(field => {
+                    let tmplId = field.type === 'textarea' ? '#tmpl-cd-field-textarea' : '#tmpl-cd-field-text';
+                    let tmpl = $(tmplId).html();
+                    let html = tmpl.replace(/{{label}}/g, field.label)
+                        .replace(/{{slug}}/g, field.slug)
+                        .replace(/{{type}}/g, field.type) // for text/number
+                        .replace(/{{required}}/g, field.required ? 'required' : '')
+                        .replace(/{{required_mark}}/g, field.required ? '<span class="cd-req">*</span>' : '');
+                    $fields.append(html);
+                });
+            }
+        },
+
         updateSelection: function ($row) {
             const id = $row.data('id');
             const qty = parseInt($row.find('.cd-item-qty-input').val());
             const max = parseInt($row.find('.cd-item-qty-input').attr('max'));
 
-            // Validate
             let finalQty = qty;
             if (qty > max) finalQty = max;
             if (qty < 1) finalQty = 1;
@@ -171,33 +213,37 @@
         },
 
         updateButtons: function () {
-            // Check if at least one item selected
             const hasSelection = Object.keys(this.selectedItems).length > 0;
-            if (hasSelection) {
-                $('.cd-modal-next').removeClass('cd-hidden').prop('disabled', false);
-            } else {
-                // If on step 2, hide/disable next
-                if (!$('#cd-step-items').hasClass('cd-hidden')) {
-                    $('.cd-modal-next').prop('disabled', true);
-                }
+            if (!$('#cd-step-items').hasClass('cd-hidden')) {
+                // On Step 2
+                $('.cd-modal-next').prop('disabled', !hasSelection);
             }
         },
 
         showStep: function (stepName) {
-            // Hide all
             $('.cd-step-view').addClass('cd-hidden');
-            $('.cd-modal-back, .cd-modal-next').addClass('cd-hidden');
+            $('.cd-modal-back, .cd-modal-next, .cd-modal-submit').addClass('cd-hidden');
 
-            // Show target
             $(`#cd-step-${stepName}`).removeClass('cd-hidden');
 
             if (stepName === 'scope') {
-                // No back, no next (clicked to advance)
+                // No nav
             }
             if (stepName === 'items') {
                 $('.cd-modal-back').removeClass('cd-hidden');
-                $('.cd-modal-next').removeClass('cd-hidden').prop('disabled', true); // Disabled until selection
+                $('.cd-modal-next').removeClass('cd-hidden').prop('disabled', Object.keys(this.selectedItems).length === 0);
             }
+            if (stepName === 'details') {
+                $('.cd-modal-back').removeClass('cd-hidden');
+                $('.cd-modal-submit').removeClass('cd-hidden');
+            }
+        },
+
+        submitClaim: function () {
+            alert('Ready to submit claim! Implementation in next step.');
+            console.log('Scope:', this.currentScope);
+            console.log('Items:', this.selectedItems);
+            console.log('Form:', $('#cd-details-form').serialize());
         }
     };
 
