@@ -1,0 +1,113 @@
+<?php
+
+if ( ! class_exists( 'WP_List_Table' ) ) {
+    require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
+}
+
+class Claim_Desk_List_Table extends WP_List_Table {
+
+    public function __construct() {
+        parent::__construct( array(
+            'singular' => __( 'Claim', 'claim-desk' ),
+            'plural'   => __( 'Claims', 'claim-desk' ),
+            'ajax'     => false
+        ) );
+    }
+
+    public function get_columns() {
+        return array(
+            'cb'          => '<input type="checkbox" />',
+            'id'          => __( 'Claim ID', 'claim-desk' ),
+            'order'       => __( 'Order', 'claim-desk' ),
+            'type_slug'   => __( 'Type', 'claim-desk' ),
+            'status'      => __( 'Status', 'claim-desk' ),
+            'created_at'  => __( 'Date', 'claim-desk' ),
+            'action'      => __( 'Action', 'claim-desk' )
+        );
+    }
+
+    public function get_sortable_columns() {
+        return array(
+            'id' => array( 'id', false ),
+            'created_at' => array( 'created_at', false ),
+            'status' => array( 'status', false )
+        );
+    }
+
+    public function prepare_items() {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'cd_claims';
+        
+        $per_page = 20;
+        $current_page = $this->get_pagenum();
+        $offset = ( $current_page - 1 ) * $per_page;
+
+        // Sorting
+        $orderby = isset( $_GET['orderby'] ) ? sanitize_sql_orderby( $_GET['orderby'] ) : 'created_at';
+        $order   = isset( $_GET['order'] ) ? sanitize_text_field( $_GET['order'] ) : 'DESC';
+
+        // Query
+        $total_items = $wpdb->get_var( "SELECT COUNT(id) FROM $table_name" );
+        $this->items = $wpdb->get_results( $wpdb->prepare( 
+            "SELECT * FROM $table_name ORDER BY $orderby $order LIMIT %d OFFSET %d", 
+            $per_page, $offset 
+        ), ARRAY_A );
+
+        $this->set_pagination_args( array(
+            'total_items' => $total_items,
+            'per_page'    => $per_page
+        ) );
+    }
+
+    public function column_cb( $item ) {
+        return sprintf(
+            '<input type="checkbox" name="claim[]" value="%s" />', $item['id']
+        );
+    }
+
+    public function column_id( $item ) {
+        return '#' . $item['id'];
+    }
+
+    public function column_order( $item ) {
+        $order = wc_get_order( $item['order_id'] );
+        if( $order ) {
+            return '<a href="' . $order->get_edit_order_url() . '">#' . $item['order_id'] . ' ' . $order->get_billing_first_name() . '</a>';
+        }
+        return '#' . $item['order_id'];
+    }
+
+    public function column_type_slug( $item ) {
+        // Map slug to Label if possible (requires config manager)
+        return ucfirst( $item['type_slug'] );
+    }
+
+    public function column_status( $item ) {
+        $status = $item['status'];
+        $color = '#999';
+        if($status == 'pending') $color = 'orange';
+        if($status == 'approved') $color = 'green';
+        if($status == 'rejected') $color = 'red';
+
+        return sprintf( '<span style="color:%s; font-weight:bold;">%s</span>', $color, ucfirst( $status ) );
+    }
+
+    public function column_created_at( $item ) {
+        return $item['created_at'];
+    }
+
+    public function column_action( $item ) {
+        $msg = __('View Details', 'claim-desk');
+        // Link to detail view (page=claim-desk&tab=claims&action=view&id=123)
+        $url = add_query_arg( array(
+            'page' => 'claim-desk',
+            'tab' => 'claims',
+            'action' => 'view',
+            'id' => $item['id']
+        ), admin_url( 'admin.php' ) );
+
+        return sprintf( '<a href="%s" class="button">%s</a>', $url, $msg );
+    }
+
+}
