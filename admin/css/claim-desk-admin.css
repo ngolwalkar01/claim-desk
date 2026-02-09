@@ -1,6 +1,90 @@
-/**
- * All of the admin-specific styles.
- */
-.wrap h1 {
+/* Admin Config Styling */
+.claim-desk-config-wrapper {
+    max-width: 1200px;
+}
+
+.cd-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
     margin-bottom: 20px;
+}
+
+.cd-scope-card {
+    margin-bottom: 20px;
+}
+
+.cd-scope-card .postbox-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-right: 10px;
+}
+
+.cd-scope-card .hndle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cd-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.cd-col {
+    flex: 1;
+}
+
+.cd-col label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.cd-split-view {
+    display: flex;
+    gap: 30px;
+}
+
+.cd-sub-section {
+    flex: 1;
+    background: #f9f9f9;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.cd-sub-section h3 {
+    margin-top: 0;
+}
+
+/* Items List */
+.cd-reasons-list,
+.cd-fields-list {
+    margin-bottom: 10px;
+}
+
+.cd-item-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    align-items: center;
+    background: #fff;
+    padding: 8px;
+    border: 1px solid #eee;
+}
+
+.cd-item-row input[type="text"] {
+    width: 100%;
+}
+
+.cd-remove-item {
+    color: #a00;
+    cursor: pointer;
+}
+
+.cd-remove-item:hover {
+    color: #d00;
 }
