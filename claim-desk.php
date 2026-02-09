@@ -54,7 +54,16 @@ register_activation_hook( __FILE__, 'activate_claim_desk' );
 register_deactivation_hook( __FILE__, 'deactivate_claim_desk' );
 
 /**
- * The core plugin class that is used to define internationalization,
+ * Declare HPOS Compatibility.
+ */
+add_action( 'before_woocommerce_init', function() {
+    if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+    }
+} );
+
+/**
+ * The core plugin class that is used to provide internationalization,
  * admin-specific hooks, and public-facing site hooks.
  */
 require plugin_dir_path( __FILE__ ) . 'includes/class-claim-desk.php';

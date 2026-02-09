@@ -1,0 +1,192 @@
+/**
+ * Public CSS
+ */
+
+/* Minimal Reset for Modal */
+.cd-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 99999;
+    /* Woo uses high z-index */
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.cd-modal-overlay.is-open {
+    display: flex;
+}
+
+.cd-modal {
+    background: #fff;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    animation: cd-fade-in 0.3s ease;
+}
+
+@keyframes cd-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.cd-modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cd-modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.cd-close-modal {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+    color: #999;
+}
+
+.cd-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.cd-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Step Layouts */
+.cd-step-instruction {
+    font-size: 1.1em;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #555;
+}
+
+/* Step 1: Cards */
+.cd-scope-selection {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.cd-scope-card {
+    border: 2px solid #eee;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cd-scope-card:hover {
+    border-color: #6200ea;
+    /* Primary Color */
+    background: #f9f9ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.cd-scope-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    display: inline-block;
+    color: #6200ea;
+    height: auto;
+    width: auto;
+}
+
+.cd-scope-card h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Step 2: Items */
+.cd-item-select-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.cd-item-checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+    cursor: pointer;
+}
+
+.cd-item-thumb {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.cd-item-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.cd-item-name {
+    font-weight: 600;
+}
+
+.cd-item-price {
+    font-size: 0.9em;
+    color: #777;
+}
+
+.cd-item-qty-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cd-item-qty-input {
+    width: 60px;
+    padding: 5px;
+    text-align: center;
+}
+
+/* Utility */
+.cd-hidden {
+    display: none !important;
+}
+
+.cd-loading {
+    text-align: center;
+    color: #777;
+    margin: 20px 0;
+}
