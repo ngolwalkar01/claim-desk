@@ -91,9 +91,13 @@ class Claim_Desk {
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-claim-desk-i18n.php';
 
+		/**
+		 * The class responsible for defining all actions that occur in the admin area.
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-claim-desk-admin.php';
+
 		/*
-		 * Future: Require Admin and Public classes here
-		 * require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-claim-desk-admin.php';
+		 * Future: Require Public class here
 		 * require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-claim-desk-public.php';
 		 */
 
@@ -127,9 +131,11 @@ class Claim_Desk {
 	 */
 	private function define_admin_hooks() {
 
-		//$plugin_admin = new Claim_Desk_Admin( $this->get_plugin_name(), $this->get_version() );
-		// $this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
-		// $this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+		$plugin_admin = new Claim_Desk_Admin( $this->get_plugin_name(), $this->get_version() );
+
+		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
+		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+        $this->loader->add_action( 'admin_menu', $plugin_admin, 'add_plugin_admin_menu' );
 
 	}
 
