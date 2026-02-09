@@ -96,6 +96,11 @@ class Claim_Desk {
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-claim-desk-admin.php';
 
+        /**
+         * The class responsible for managing configuration options.
+         */
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-claim-desk-config-manager.php';
+
 		/*
 		 * Future: Require Public class here
 		 * require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-claim-desk-public.php';
@@ -132,6 +137,8 @@ class Claim_Desk {
 	private function define_admin_hooks() {
 
 		$plugin_admin = new Claim_Desk_Admin( $this->get_plugin_name(), $this->get_version() );
+        $config_manager = new Claim_Desk_Config_Manager();
+        $config_manager->init();
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
