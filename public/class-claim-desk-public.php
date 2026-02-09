@@ -77,6 +77,106 @@ class Claim_Desk_Public {
     public function init() {
         add_action( 'wp_ajax_claim_desk_get_order_items', array( $this, 'ajax_get_order_items' ) );
         add_action( 'wp_ajax_nopriv_claim_desk_get_order_items', array( $this, 'ajax_get_order_items' ) );
+        
+        add_action( 'wp_ajax_claim_desk_submit_claim', array( $this, 'ajax_submit_claim' ) );
+        add_action( 'wp_ajax_nopriv_claim_desk_submit_claim', array( $this, 'ajax_submit_claim' ) );
+    }
+
+    /**
+     * AJAX: Submit a new claim.
+     */
+    public function ajax_submit_claim() {
+        check_ajax_referer( 'claim_desk_public_nonce', 'nonce' );
+
+        $order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
+        $scope    = isset( $_POST['scope'] ) ? sanitize_key( $_POST['scope'] ) : '';
+        $items    = isset( $_POST['items'] ) ? json_decode( stripslashes( $_POST['items'] ), true ) : [];
+        $form_data = isset( $_POST['form_data'] ) ? json_decode( stripslashes( $_POST['form_data'] ), true ) : [];
+
+        // 1. Validation
+        if ( ! $order_id || ! $scope || empty( $items ) ) {
+            wp_send_json_error( __( 'Missing required data (Order, Scope, or Items).', 'claim-desk' ) );
+        }
+
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) {
+            wp_send_json_error( __( 'Order not found.', 'claim-desk' ) );
+        }
+
+        // Check ownership
+        if ( $order->get_user_id() !== get_current_user_id() && ! current_user_can( 'manage_woocommerce' ) ) {
+            wp_send_json_error( __( 'Permission denied.', 'claim-desk' ) );
+        }
+
+        // 2. Prepare Data for Insertion
+        $db = new Claim_Desk_DB_Handler();
+
+        // Create Header
+        $claim_id = $db->create_claim( array(
+            'order_id' => $order_id,
+            'user_id'  => get_current_user_id(),
+            'type_slug' => $scope,
+            'status'   => 'pending' 
+        ));
+
+        if ( ! $claim_id ) {
+            wp_send_json_error( __( 'Failed to create claim record.', 'claim-desk' ) );
+        }
+
+        // Create Items
+        foreach ( $items as $item_id => $qty ) {
+            $item_id = intval($item_id); // Order Item ID (line item id)
+            $qty = intval($qty);
+
+            // Fetch product ID from order item
+            $order_item = $order->get_item( $item_id );
+            
+            // Safety check if item belongs to order
+            if ( ! $order_item ) continue; 
+
+            $product_id = $order_item->get_product_id();
+            $qty_total = $order_item->get_quantity();
+
+            // Extract reason from form data? 
+            // In our simple form, we might have one reason for the whole claim OR per item?
+            // The step 3 UI has a single Reason radio.
+            // Let's assume the single reason applies to all selected items for this MVP,
+            // OR we store it in dynamic_data.
+            // The table `wp_cd_claim_items` has `reason_slug`.
+            
+            // Extract single reason for now
+            $reason_slug = '';
+            foreach($form_data as $field) {
+                if($field['name'] === 'claim_reason') {
+                    $reason_slug = sanitize_key($field['value']);
+                    break;
+                }
+            }
+
+            // Collect other dynamic fields into JSON
+            // e.g. batch_number, description
+            $dynamic_fields = array();
+            foreach($form_data as $field) {
+                if($field['name'] !== 'claim_reason') {
+                    $dynamic_fields[$field['name']] = sanitize_text_field($field['value']);
+                }
+            }
+
+            $db->create_claim_item( array(
+                'claim_id'      => $claim_id,
+                'order_item_id' => $item_id,
+                'product_id'    => $product_id,
+                'qty_total'     => $qty_total,
+                'qty_claimed'   => $qty,
+                'reason_slug'   => $reason_slug,
+                'dynamic_data'  => json_encode( $dynamic_fields )
+            ));
+        }
+
+        wp_send_json_success( array(
+            'message' => __( 'Claim submitted successfully!', 'claim-desk' ),
+            'claim_id' => $claim_id
+        ));
     }
 
     /**
