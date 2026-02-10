@@ -232,7 +232,7 @@ class Claim_Desk_Public {
         // TODO: specific logic to check if order is eligible for claim
         // e.g., if( $order->get_status() === 'completed' ) ...
 
-        $actions['claim-desk-file'] = array(
+        $actions['claim-desk-trigger'] = array(
             'url'  => '#claim-order-' . $order->get_id(), // Handled by JS
             'name' => __( 'Report Problem', 'claim-desk' ),
             'action' => 'claim-desk-trigger', // Helper class for button

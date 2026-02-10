@@ -21,11 +21,15 @@
 
             // Open Modal
             $(document).on('click', '.claim-desk-trigger, .claim-desk-file, a[href^="#claim-order-"]', function (e) {
+                console.log('Claim Desk: Click detected', this);
                 e.preventDefault();
                 const href = $(this).attr('href');
                 if (href && href.indexOf('#claim-order-') !== -1) {
                     self.currentOrder = href.split('-').pop();
+                    console.log('Claim Desk: Opening modal for order', self.currentOrder);
                     self.openModal();
+                } else {
+                    console.warn('Claim Desk: Invalid href', href);
                 }
             });
 
