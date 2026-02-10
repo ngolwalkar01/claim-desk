@@ -13,7 +13,7 @@
  * Plugin Name:       Claim Desk
  * Plugin URI:        https://example.com/plugin-name
  * Description:       A generalized, multi-industry claim management system for WooCommerce with custom tables.
- * Version:           1.0.5
+ * Version:           1.0.6
  * Author:            Your Name
  * Author URI:        https://example.com
  * License:           GPL-2.0+
