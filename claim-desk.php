@@ -6,7 +6,7 @@
  * administrative area. This file also includes all of the plugin dependencies.
  *
  * @link              https://example.com
- * @since             1.0.0
+ * @since             1.0.1
  * @package           Claim_Desk
  *
  * @wordpress-plugin
