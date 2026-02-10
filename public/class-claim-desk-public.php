@@ -230,12 +230,15 @@ class Claim_Desk_Public {
      */
     public function add_order_action_button( $actions, $order ) {
         // TODO: specific logic to check if order is eligible for claim
-        // e.g., if( $order->get_status() === 'completed' ) ...
+
+        $wizard_page_id = get_page_by_path( 'claim-wizard' ); // Improve: get from settings
+        $wizard_url = $wizard_page_id ? get_permalink( $wizard_page_id ) : site_url( '/claim-wizard/' );
+        $claim_url = add_query_arg( 'order_id', $order->get_id(), $wizard_url );
 
         $actions['claim-desk-trigger'] = array(
-            'url'  => '#claim-order-' . $order->get_id(), // Handled by JS
+            'url'  => $claim_url,
             'name' => __( 'Report Problem', 'claim-desk' ),
-            'action' => 'claim-desk-trigger', // Helper class for button
+            'action' => 'claim-desk-trigger', // Keeps class but won't trigger modal if JS logic changes
         );
 
         return $actions;
@@ -249,19 +252,33 @@ class Claim_Desk_Public {
     public function add_order_detail_button( $order ) {
         if ( ! $order ) return;
 
-        // Basic check if user can view
         if ( $order->get_user_id() !== get_current_user_id() && ! current_user_can( 'manage_woocommerce' ) ) {
             return;
         }
 
-        $url = '#claim-order-' . $order->get_id();
+        $wizard_page_id = get_page_by_path( 'claim-wizard' );
+        $wizard_url = $wizard_page_id ? get_permalink( $wizard_page_id ) : site_url( '/claim-wizard/' );
+        $claim_url = add_query_arg( 'order_id', $order->get_id(), $wizard_url );
         ?>
         <p class="order-again">
-            <a href="<?php echo esc_url( $url ); ?>" class="button claim-desk-trigger claim-desk-file">
+            <a href="<?php echo esc_url( $claim_url ); ?>" class="button claim-desk-trigger">
                 <?php _e( 'Report Problem', 'claim-desk' ); ?>
             </a>
         </p>
         <?php
+    }
+
+    /**
+     * Render the Wizard Shortcode.
+     */
+    public function render_wizard( $atts ) {
+        // Enqueue scripts/styles if not already
+        $this->enqueue_styles();
+        $this->enqueue_scripts();
+
+        ob_start();
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/partials/claim-desk-wizard.php';
+        return ob_get_clean();
     }
 
     /**

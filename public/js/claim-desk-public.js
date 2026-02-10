@@ -1,283 +1,376 @@
 (function ($) {
     'use strict';
 
-    /**
-     * Frontend Logic
-     */
-    const ClaimDesk = {
-        config: {},
-        currentOrder: 0,
-        currentScope: null,
+    const ClaimDeskWizard = {
+        orderId: 0,
+        currentStep: 1,
         selectedItems: {}, // { item_id: qty }
-        formData: {},
+        uploadedFiles: [],
+        claimType: '',
 
         init: function () {
-            this.config = claim_desk_public.scopes;
+            // Check if wizard exists
+            if ($('.cd-wizard-container').length === 0) {
+                return;
+            }
+
+            // Get Order ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            this.orderId = urlParams.get('order_id');
+
+            if (!this.orderId) {
+                console.error('Claim Desk: Missing Order ID');
+                return;
+            }
+
             this.bindEvents();
+            this.fetchItems();
         },
 
         bindEvents: function () {
             const self = this;
 
-            // Open Modal
-            $(document).on('click', '.claim-desk-trigger, .claim-desk-file, a[href^="#claim-order-"]', function (e) {
-                console.log('Claim Desk: Click detected', this);
-                e.preventDefault();
-                const href = $(this).attr('href');
-                if (href && href.indexOf('#claim-order-') !== -1) {
-                    self.currentOrder = href.split('-').pop();
-                    console.log('Claim Desk: Opening modal for order', self.currentOrder);
-                    self.openModal();
-                } else {
-                    console.warn('Claim Desk: Invalid href', href);
-                }
+            // Step 1: Next
+            $('#step1Next').on('click', function () {
+                self.goToStep(2);
             });
 
-            // Close
-            $('.cd-close-modal, .cd-modal-overlay').on('click', function (e) {
-                if (e.target === this || $(this).hasClass('cd-close-modal')) {
-                    self.closeModal();
-                }
+            // Step 2: Next/Back
+            $('#step2Next').on('click', function () {
+                self.updateSummary();
+                self.goToStep(3);
+            });
+            $('#step2Back').on('click', function () {
+                self.goToStep(1);
             });
 
-            // Step 1: Scope Click
-            $(document).on('click', '.cd-scope-card', function () {
-                const slug = $(this).data('slug');
-                self.selectScope(slug);
+            // Step 3: Submit/Back
+            $('#step3Back').on('click', function () {
+                self.goToStep(2);
             });
-
-            // Step 2: Item Checkbox & Qty
-            $(document).on('change', '.cd-item-checkbox', function () {
-                const $row = $(this).closest('.cd-item-select-row');
-                const $qtyWrapper = $row.find('.cd-item-qty-wrapper');
-
-                if ($(this).is(':checked')) {
-                    $qtyWrapper.removeClass('cd-hidden');
-                    self.updateSelection($row);
-                } else {
-                    $qtyWrapper.addClass('cd-hidden');
-                    const id = $row.data('id');
-                    delete self.selectedItems[id];
-                }
-                self.updateButtons();
-            });
-
-            $(document).on('change input', '.cd-item-qty-input', function () {
-                const $row = $(this).closest('.cd-item-select-row');
-                self.updateSelection($row);
-            });
-
-            // Step 3: Form Input Changes (to enable Submit)
-            $(document).on('change input', '#cd-details-form input, #cd-details-form textarea', function () {
-                // Future validation logic
-            });
-
-            // Back Button
-            $('.cd-modal-back').on('click', function () {
-                if (!$('#cd-step-items').hasClass('cd-hidden')) {
-                    self.showStep('scope');
-                } else if (!$('#cd-step-details').hasClass('cd-hidden')) {
-                    self.showStep('items');
-                }
-            });
-
-            // Next Button (Step 2 -> 3)
-            $('.cd-modal-next').on('click', function () {
-                if (!$('#cd-step-items').hasClass('cd-hidden')) {
-                    self.renderStep3();
-                    self.showStep('details');
-                }
-            });
-
-            // Submit Button
-            $('.cd-modal-submit').on('click', function () {
+            $('#submitBtn').on('click', function () {
                 self.submitClaim();
             });
-        },
 
-        openModal: function () {
-            $('.cd-modal-overlay').addClass('is-open');
-            this.showStep('scope');
-            this.renderScopes();
-        },
+            // Claim Type Selection
+            $('.claim-type-card').on('click', function () {
+                $('.claim-type-card').removeClass('selected');
+                $(this).addClass('selected');
+                self.claimType = $(this).data('claim-type');
 
-        closeModal: function () {
-            $('.cd-modal-overlay').removeClass('is-open');
-            this.selectedItems = {};
-            this.currentScope = null;
-            $('#cd-details-form')[0].reset();
-        },
+                // Show/Hide sections
+                $('#exchangeOptions').toggle(self.claimType === 'exchange');
+                $('#returnOptions').toggle(self.claimType === 'return');
 
-        renderScopes: function () {
-            const $list = $('#cd-scope-list');
-            $list.empty();
-
-            if (!this.config || Object.keys(this.config).length === 0) {
-                $list.html('<p>No claim types configured.</p>');
-                return;
-            }
-
-            $.each(this.config, function (key, scope) {
-                const html = `
-                    <div class="cd-scope-card" data-slug="${scope.slug}">
-                        <span class="cd-scope-icon dashicons dashicons-${scope.icon}"></span>
-                        <h4>${scope.label}</h4>
-                    </div>
-                `;
-                $list.append(html);
+                self.validateStep2();
             });
-        },
 
-        selectScope: function (slug) {
-            this.currentScope = slug;
-            this.showStep('items');
-            this.fetchItems();
+            // Input Validation Step 2
+            $('#problemType, #problemDescription, #productCondition, #refundMethod').on('change input', function () {
+                self.validateStep2();
+            });
+
+            // Confirm Checkbox
+            $('#confirmCheckbox').on('change', function () {
+                $('#submitBtn').prop('disabled', !$(this).is(':checked'));
+            });
+
+            // File Upload UI (Visual only for Phase 2 MVP)
+            $('#fileUploadArea').on('click', function () { $('#fileInput').click(); });
+            $('#fileInput').on('change', function (e) { self.handleFiles(e.target.files); });
+
+            // Drag and Drop
+            const $dropArea = $('#fileUploadArea');
+            $dropArea.on('dragover', function (e) { e.preventDefault(); $dropArea.addClass('dragover'); });
+            $dropArea.on('dragleave', function () { $dropArea.removeClass('dragover'); });
+            $dropArea.on('drop', function (e) {
+                e.preventDefault();
+                $dropArea.removeClass('dragover');
+                self.handleFiles(e.originalEvent.dataTransfer.files);
+            });
         },
 
         fetchItems: function () {
-            const $container = $('#cd-items-container');
-            $container.html('<div class="cd-loading">Loading items...</div>');
+            const $grid = $('#cd-product-grid');
 
             $.post(claim_desk_public.ajax_url, {
                 action: 'claim_desk_get_order_items',
                 nonce: claim_desk_public.nonce,
-                order_id: this.currentOrder
+                order_id: this.orderId
             }, (res) => {
                 if (res.success) {
-                    this.renderItems(res.data);
+                    $grid.empty();
+                    res.data.forEach(item => {
+                        this.renderProductCard(item, $grid);
+                    });
                 } else {
-                    $container.html('<p class="cd-error">' + res.data + '</p>');
+                    $grid.html('<p class="error-message" style="display:block;">' + res.data + '</p>');
                 }
             });
         },
 
-        renderItems: function (items) {
-            const $container = $('#cd-items-container');
-            const tmpl = $('#tmpl-cd-item-row').html();
-            $container.empty();
+        renderProductCard: function (item, $container) {
+            const self = this;
+            const html = `
+                <div class="product-card" data-item-id="${item.id}">
+                    <input type="checkbox" class="product-checkbox">
+                    <img src="${item.image}" alt="${item.name}" class="product-image">
+                    <div class="product-info">
+                        <div class="product-name">${item.name}</div>
+                        <div class="product-meta">Purchased Qty: ${item.qty}</div>
+                        <span class="eligibility-badge badge-eligible">Eligible</span> 
+                    </div>
+                    <div class="product-quantity">
+                        <label class="quantity-label">Claim Qty:</label>
+                        <select class="quantity-select" disabled>
+                            <option value="0">Select</option>
+                            ${this.generateQtyOptions(item.qty)}
+                        </select>
+                    </div>
+                </div>
+            `;
+            const $card = $(html);
+            $container.append($card);
 
-            items.forEach(item => {
-                let html = tmpl.replace(/{{id}}/g, item.id)
-                    .replace(/{{name}}/g, item.name)
-                    .replace(/{{image}}/g, item.image)
-                    .replace(/{{price}}/g, item.price)
-                    .replace(/{{max_qty}}/g, item.qty);
-                $container.append(html);
+            // Bind Card Events
+            const $checkbox = $card.find('.product-checkbox');
+            const $select = $card.find('.quantity-select');
+
+            $card.on('click', function (e) {
+                if (e.target !== $checkbox[0] && e.target !== $select[0]) {
+                    $checkbox.prop('checked', !$checkbox.prop('checked')).trigger('change');
+                }
+            });
+
+            $checkbox.on('change', function () {
+                if ($(this).is(':checked')) {
+                    $card.addClass('selected');
+                    $select.prop('disabled', false);
+                } else {
+                    $card.removeClass('selected');
+                    $select.prop('disabled', true).val(0);
+                    delete self.selectedItems[item.id];
+                }
+                self.validateStep1();
+            });
+
+            $select.on('change', function () {
+                const qty = parseInt($(this).val());
+                if (qty > 0) {
+                    self.selectedItems[item.id] = {
+                        qty: qty,
+                        name: item.name,
+                        image: item.image
+                    };
+                } else {
+                    delete self.selectedItems[item.id];
+                }
+                self.validateStep1();
             });
         },
 
-        renderStep3: function () {
-            const scopeConfig = this.config[this.currentScope];
-            const $reasons = $('#cd-reasons-container');
-            const $fields = $('#cd-fields-container');
+        generateQtyOptions: function (max) {
+            let opts = '';
+            for (let i = 1; i <= max; i++) {
+                opts += `<option value="${i}">${i}</option>`;
+            }
+            return opts;
+        },
 
-            $reasons.empty();
-            $fields.empty();
+        validateStep1: function () {
+            const hasItems = Object.keys(this.selectedItems).length > 0;
+            $('#step1Next').prop('disabled', !hasItems);
 
-            // Render Reasons
-            if (scopeConfig.reasons && scopeConfig.reasons.length > 0) {
-                scopeConfig.reasons.forEach(reason => {
+            // Populate Problem Type Options if not already done (could allow dynamic config later)
+            if ($('#problemType option').length <= 1) {
+                const problems = [
+                    { val: 'damaged', txt: 'Product Damaged' },
+                    { val: 'defective', txt: 'Product Defective' },
+                    { val: 'wrong-item', txt: 'Wrong Item Received' },
+                    { val: 'wrong-size', txt: 'Wrong Size/Color' },
+                    { val: 'not-as-described', txt: 'Not As Described' },
+                    { val: 'quality-issue', txt: 'Quality Issue' },
+                    { val: 'other', txt: 'Other' }
+                ];
+                problems.forEach(p => $('#problemType').append(new Option(p.txt, p.val)));
+            }
+        },
+
+        validateStep2: function () {
+            const problemType = $('#problemType').val();
+            const description = $('#problemDescription').val();
+            const condition = $('#productCondition').val();
+            let isValid = this.claimType && problemType && description && condition;
+
+            if (this.claimType === 'return') {
+                isValid = isValid && $('#refundMethod').val();
+            }
+
+            $('#step2Next').prop('disabled', !isValid);
+        },
+
+        handleFiles: function (files) {
+            const self = this;
+            const $preview = $('#filePreview');
+
+            Array.from(files).forEach(file => {
+                if (self.uploadedFiles.length >= 5) {
+                    alert('Max 5 files');
+                    return;
+                }
+                self.uploadedFiles.push(file);
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const idx = self.uploadedFiles.length - 1;
                     const html = `
-                        <label class="cd-reason-chip">
-                            <input type="radio" name="claim_reason" value="${reason.slug}">
-                            <span>${reason.label}</span>
-                        </label>
+                        <div class="file-item">
+                            <img src="${e.target.result}">
+                            <button class="file-remove" data-idx="${idx}">×</button>
+                        </div>
                     `;
-                    $reasons.append(html);
-                });
+                    $preview.append(html);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Re-bind remove
+            $('.file-remove').off('click').on('click', function () {
+                // For MVP visual removal only, logic to remove from array requires re-render
+                $(this).parent().remove();
+            });
+        },
+
+        updateSummary: function () {
+            // Products
+            const $prodSummary = $('#summaryProduct');
+            $prodSummary.empty();
+            $.each(this.selectedItems, function (id, data) {
+                $prodSummary.append(`
+                    <div class="summary-product">
+                        <img src="${data.image}" class="summary-product-image">
+                        <div>
+                            <div style="font-weight:600;">${data.name}</div>
+                            <div style="font-size:13px;">Qty: ${data.qty}</div>
+                        </div>
+                    </div>
+                 `);
+            });
+
+            $('#summaryClaimType').text(this.capitalize(this.claimType));
+            $('#summaryProblemType').text($('#problemType option:selected').text());
+            $('#summaryDescription').text($('#problemDescription').val());
+            $('#summaryCondition').text($('#productCondition option:selected').text());
+
+            if (this.claimType === 'return') {
+                $('#summaryRefundRow').show();
+                $('#summaryRefund').text($('#refundMethod option:selected').text());
+                $('#summaryReplacementRow').hide();
+            } else if (this.claimType === 'exchange') {
+                $('#summaryReplacementRow').show();
+                const size = $('#replacementSize').val() || '-';
+                const color = $('#replacementColor').val() || '-';
+                $('#summaryReplacement').text(`Size: ${size}, Color: ${color}`);
+                $('#summaryRefundRow').hide();
             } else {
-                $reasons.html('<p>No specific reasons defined.</p>');
-            }
-
-            // Render Fields
-            if (scopeConfig.fields && scopeConfig.fields.length > 0) {
-                scopeConfig.fields.forEach(field => {
-                    let tmplId = field.type === 'textarea' ? '#tmpl-cd-field-textarea' : '#tmpl-cd-field-text';
-                    let tmpl = $(tmplId).html();
-                    let html = tmpl.replace(/{{label}}/g, field.label)
-                        .replace(/{{slug}}/g, field.slug)
-                        .replace(/{{type}}/g, field.type) // for text/number
-                        .replace(/{{required}}/g, field.required ? 'required' : '')
-                        .replace(/{{required_mark}}/g, field.required ? '<span class="cd-req">*</span>' : '');
-                    $fields.append(html);
-                });
-            }
-        },
-
-        updateSelection: function ($row) {
-            const id = $row.data('id');
-            const qty = parseInt($row.find('.cd-item-qty-input').val());
-            const max = parseInt($row.find('.cd-item-qty-input').attr('max'));
-
-            let finalQty = qty;
-            if (qty > max) finalQty = max;
-            if (qty < 1) finalQty = 1;
-
-            this.selectedItems[id] = finalQty;
-        },
-
-        updateButtons: function () {
-            const hasSelection = Object.keys(this.selectedItems).length > 0;
-            if (!$('#cd-step-items').hasClass('cd-hidden')) {
-                // On Step 2
-                $('.cd-modal-next').prop('disabled', !hasSelection);
-            }
-        },
-
-        showStep: function (stepName) {
-            $('.cd-step-view').addClass('cd-hidden');
-            $('.cd-modal-back, .cd-modal-next, .cd-modal-submit').addClass('cd-hidden');
-
-            $(`#cd-step-${stepName}`).removeClass('cd-hidden');
-
-            if (stepName === 'scope') {
-                // No nav
-            }
-            if (stepName === 'items') {
-                $('.cd-modal-back').removeClass('cd-hidden');
-                $('.cd-modal-next').removeClass('cd-hidden').prop('disabled', Object.keys(this.selectedItems).length === 0);
-            }
-            if (stepName === 'details') {
-                $('.cd-modal-back').removeClass('cd-hidden');
-                $('.cd-modal-submit').removeClass('cd-hidden');
+                $('#summaryRefundRow').hide();
+                $('#summaryReplacementRow').hide();
             }
         },
 
         submitClaim: function () {
             const self = this;
-            const $btn = $('.cd-modal-submit');
+            const $btn = $('#submitBtn');
 
             $btn.prop('disabled', true).text('Submitting...');
+
+            // Prepare Data
+            // We need to map new fields to what backend expects.
+            // Backend expects: scope, items (json), form_data (json array of name/value)
+
+            // Construct form_data array
+            const formData = [
+                { name: 'problem_type', value: $('#problemType').val() },
+                { name: 'description', value: $('#problemDescription').val() },
+                { name: 'condition', value: $('#productCondition').val() },
+                { name: 'resolution_type', value: this.claimType } // New field
+            ];
+
+            if (this.claimType === 'return') {
+                formData.push({ name: 'refund_method', value: $('#refundMethod').val() });
+            }
+            if (this.claimType === 'exchange') {
+                formData.push({ name: 'replacement_size', value: $('#replacementSize').val() });
+                formData.push({ name: 'replacement_color', value: $('#replacementColor').val() });
+            }
+
+            // Items payload: { id: qty }
+            const itemsPayload = {};
+            $.each(this.selectedItems, function (id, data) {
+                itemsPayload[id] = data.qty;
+            });
 
             const data = {
                 action: 'claim_desk_submit_claim',
                 nonce: claim_desk_public.nonce,
-                order_id: this.currentOrder,
-                scope: this.currentScope,
-                items: JSON.stringify(this.selectedItems),
-                form_data: JSON.stringify($('#cd-details-form').serializeArray())
+                order_id: this.orderId,
+                scope: this.claimType, // Using claim type as scope for now
+                items: JSON.stringify(itemsPayload),
+                form_data: JSON.stringify(formData)
             };
 
             $.post(claim_desk_public.ajax_url, data, function (res) {
-                $btn.prop('disabled', false).text('Submit Claim');
-
                 if (res.success) {
-                    alert(res.data.message);
-                    self.closeModal();
-                    // Optional: reload to see status if we implement that
-                    // location.reload(); 
+                    $('#generatedClaimId').text('#' + res.data.claim_id);
+                    $('.cd-wizard-container .step-content').removeClass('active');
+                    $('#successScreen').addClass('active');
+                    // Hide stepper
+                    $('.progress-stepper').hide();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
-                    alert('Error: ' + res.data);
+                    alert(res.data);
+                    $btn.prop('disabled', false).text('Submit Claim');
                 }
             }).fail(function () {
+                alert('Server Error');
                 $btn.prop('disabled', false).text('Submit Claim');
-                alert('Server error. Please try again.');
             });
+        },
+
+        goToStep: function (step) {
+            this.currentStep = step;
+            $('.step-content').removeClass('active');
+            $('#step' + step).addClass('active');
+
+            // Stepper UI
+            $('.step').removeClass('active completed');
+            $('.step-indicator').removeClass('check').text(function () {
+                return $(this).parent().data('step');
+            });
+
+            $('.step').each(function () {
+                const s = $(this).data('step');
+                if (s < step) {
+                    $(this).addClass('completed');
+                    $(this).find('.step-indicator').addClass('check').text('');
+                } else if (s === step) {
+                    $(this).addClass('active');
+                }
+            });
+
+            const p = ((step - 1) / 2) * 100;
+            $('#stepperProgress').css('width', p + '%');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+
+        capitalize: function (s) {
+            if (!s) return '';
+            return s.charAt(0).toUpperCase() + s.slice(1);
         }
     };
 
     $(document).ready(function () {
-        ClaimDesk.init();
+        ClaimDeskWizard.init();
     });
 
 })(jQuery);
