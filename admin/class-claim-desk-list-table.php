@@ -59,7 +59,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
         $this->items = $wpdb->get_results( $wpdb->prepare( 
             "SELECT * FROM $table_name ORDER BY $orderby $order LIMIT %d OFFSET %d", 
             $per_page, $offset 
-        ), ARRAY_A );
+        ) ); // Default is OBJECT
 
         $this->set_pagination_args( array(
             'total_items' => $total_items,
@@ -67,31 +67,35 @@ class Claim_Desk_List_Table extends WP_List_Table {
         ) );
     }
 
+    protected function column_default( $item, $column_name ) {
+        return isset( $item->$column_name ) ? $item->$column_name : print_r( $item, true );
+    }
+
     public function column_cb( $item ) {
         return sprintf(
-            '<input type="checkbox" name="claim[]" value="%s" />', $item['id']
+            '<input type="checkbox" name="claim[]" value="%s" />', $item->id
         );
     }
 
     public function column_id( $item ) {
-        return '#' . $item['id'];
+        return '#' . $item->id;
     }
 
     public function column_order( $item ) {
-        $order = wc_get_order( $item['order_id'] );
+        $order = wc_get_order( $item->order_id );
         if( $order ) {
-            return '<a href="' . $order->get_edit_order_url() . '">#' . $item['order_id'] . ' ' . $order->get_billing_first_name() . '</a>';
+            return '<a href="' . $order->get_edit_order_url() . '">#' . $item->order_id . ' ' . $order->get_billing_first_name() . '</a>';
         }
-        return '#' . $item['order_id'];
+        return '#' . $item->order_id;
     }
 
     public function column_type_slug( $item ) {
         // Map slug to Label if possible (requires config manager)
-        return ucfirst( $item['type_slug'] );
+        return ucfirst( $item->type_slug );
     }
 
     public function column_status( $item ) {
-        $status = $item['status'];
+        $status = $item->status;
         $color = '#999';
         if($status == 'pending') $color = 'orange';
         if($status == 'approved') $color = 'green';
@@ -101,7 +105,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
     }
 
     public function column_created_at( $item ) {
-        return $item['created_at'];
+        return $item->created_at;
     }
 
     public function column_action( $item ) {
@@ -111,7 +115,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
             'page' => 'claim-desk',
             'tab' => 'claims',
             'action' => 'view',
-            'id' => $item['id']
+            'id' => $item->id
         ), admin_url( 'admin.php' ) );
 
         return sprintf( '<a href="%s" class="button">%s</a>', $url, $msg );
