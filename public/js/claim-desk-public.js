@@ -244,10 +244,35 @@
         },
 
         submitClaim: function () {
-            alert('Ready to submit claim! Implementation in next step.');
-            console.log('Scope:', this.currentScope);
-            console.log('Items:', this.selectedItems);
-            console.log('Form:', $('#cd-details-form').serialize());
+            const self = this;
+            const $btn = $('.cd-modal-submit');
+
+            $btn.prop('disabled', true).text('Submitting...');
+
+            const data = {
+                action: 'claim_desk_submit_claim',
+                nonce: claim_desk_public.nonce,
+                order_id: this.currentOrder,
+                scope: this.currentScope,
+                items: JSON.stringify(this.selectedItems),
+                form_data: JSON.stringify($('#cd-details-form').serializeArray())
+            };
+
+            $.post(claim_desk_public.ajax_url, data, function (res) {
+                $btn.prop('disabled', false).text('Submit Claim');
+
+                if (res.success) {
+                    alert(res.data.message);
+                    self.closeModal();
+                    // Optional: reload to see status if we implement that
+                    // location.reload(); 
+                } else {
+                    alert('Error: ' + res.data);
+                }
+            }).fail(function () {
+                $btn.prop('disabled', false).text('Submit Claim');
+                alert('Server error. Please try again.');
+            });
         }
     };
 
