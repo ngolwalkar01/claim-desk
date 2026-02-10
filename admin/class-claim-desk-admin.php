@@ -198,8 +198,21 @@ class Claim_Desk_Admin {
 
             <div class="card" style="margin-top:20px;">
                 <h4>Actions</h4>
-                <p>Status Management (Approve/Reject) coming soon.</p>
-                <a href="?page=claim-desk&tab=claims" class="button">Back to List</a>
+                <form method="post" action="">
+                    <?php wp_nonce_field( 'claim_desk_action', 'claim_desk_nonce' ); ?>
+                    <input type="hidden" name="action" value="claim_desk_update_status">
+                    <input type="hidden" name="claim_id" value="<?php echo $claim_id; ?>">
+                    
+                    <?php if ( $claim->status !== 'approved' ): ?>
+                        <button type="submit" name="status" value="approved" class="button button-primary" style="background:green; border-color:darkgreen;">Approve Claim</button>
+                    <?php endif; ?>
+
+                    <?php if ( $claim->status !== 'rejected' ): ?>
+                        <button type="submit" name="status" value="rejected" class="button button-secondary" style="color:red; border-color:red;">Reject Claim</button>
+                    <?php endif; ?>
+                    
+                    <a href="?page=claim-desk&tab=claims" class="button" style="margin-left:10px;">Back to List</a>
+                </form>
             </div>
 
         </div>
@@ -210,6 +223,56 @@ class Claim_Desk_Admin {
             .cd-status-badge.rejected { background: red; }
         </style>
         <?php
+    }
+
+    }
+
+    /**
+     * Process Status Update (Approve/Reject).
+     * Hooked to admin_init.
+     */
+    public function process_status_update() {
+        if ( ! isset( $_POST['action'] ) || $_POST['action'] !== 'claim_desk_update_status' ) {
+            return;
+        }
+
+        if ( ! isset( $_POST['claim_desk_nonce'] ) || ! wp_verify_nonce( $_POST['claim_desk_nonce'], 'claim_desk_action' ) ) {
+            wp_die( 'Security check failed' );
+        }
+
+        if ( ! current_user_can( 'manage_woocommerce' ) ) {
+            wp_die( 'Permission denied' );
+        }
+
+        $claim_id = isset( $_POST['claim_id'] ) ? intval( $_POST['claim_id'] ) : 0;
+        $status   = isset( $_POST['status'] ) ? sanitize_key( $_POST['status'] ) : '';
+
+        if ( ! $claim_id || ! in_array( $status, array( 'approved', 'rejected' ) ) ) {
+            return;
+        }
+
+        global $wpdb;
+        $table_claims = $wpdb->prefix . 'cd_claims';
+        
+        $wpdb->update( 
+            $table_claims, 
+            array( 'status' => $status, 'updated_at' => current_time( 'mysql' ) ), 
+            array( 'id' => $claim_id ),
+            array( '%s', '%s' ),
+            array( '%d' )
+        );
+
+        // Redirect to avoid resubmission
+        $redirect_url = add_query_arg( array(
+            'page'   => 'claim-desk',
+            'tab'    => 'claims',
+            'action' => 'view',
+            'id'     => $claim_id,
+            'msg'    => 'updated'
+        ), admin_url( 'admin.php' ) );
+
+        wp_redirect( $redirect_url );
+        exit;
     }
 
 }
