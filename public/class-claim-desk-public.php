@@ -242,6 +242,29 @@ class Claim_Desk_Public {
     }
 
     /**
+     * Add 'Report Problem' button to Order Details page.
+     * 
+     * @param WC_Order $order
+     */
+    public function add_order_detail_button( $order ) {
+        if ( ! $order ) return;
+
+        // Basic check if user can view
+        if ( $order->get_user_id() !== get_current_user_id() && ! current_user_can( 'manage_woocommerce' ) ) {
+            return;
+        }
+
+        $url = '#claim-order-' . $order->get_id();
+        ?>
+        <p class="order-again">
+            <a href="<?php echo esc_url( $url ); ?>" class="button claim-desk-trigger claim-desk-file">
+                <?php _e( 'Report Problem', 'claim-desk' ); ?>
+            </a>
+        </p>
+        <?php
+    }
+
+    /**
      * Add metadata to the order button for JS to read (Order ID).
      * WooCommerce doesn't easily let us add data-attributes to the button via the filter above,
      * so we might rely on the URL or DOM traversal. 

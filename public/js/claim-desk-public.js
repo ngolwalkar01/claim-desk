@@ -20,7 +20,7 @@
             const self = this;
 
             // Open Modal
-            $(document).on('click', '.claim-desk-trigger', function (e) {
+            $(document).on('click', '.claim-desk-trigger, .claim-desk-file, a[href^="#claim-order-"]', function (e) {
                 e.preventDefault();
                 const href = $(this).attr('href');
                 if (href && href.indexOf('#claim-order-') !== -1) {
