@@ -61,6 +61,12 @@ class Claim_Desk_List_Table extends WP_List_Table {
             $per_page, $offset 
         ) ); // Default is OBJECT
 
+        var_dump($wpdb->prepare( 
+            "SELECT * FROM $table_name ORDER BY $orderby $order LIMIT %d OFFSET %d", 
+            $per_page, $offset 
+        ));
+        var_dump($this->items);
+
         $this->set_pagination_args( array(
             'total_items' => $total_items,
             'per_page'    => $per_page
