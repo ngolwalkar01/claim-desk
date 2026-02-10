@@ -44,8 +44,15 @@ class Claim_Desk_List_Table extends WP_List_Table {
         $offset = ( $current_page - 1 ) * $per_page;
 
         // Sorting
-        $orderby = isset( $_GET['orderby'] ) ? sanitize_sql_orderby( $_GET['orderby'] ) : 'created_at';
+        $orderby = isset( $_GET['orderby'] ) ? sanitize_key( $_GET['orderby'] ) : 'created_at';
         $order   = isset( $_GET['order'] ) ? sanitize_text_field( $_GET['order'] ) : 'DESC';
+
+        $allowed_sort_columns = array( 'id', 'created_at', 'status' );
+        if ( ! in_array( $orderby, $allowed_sort_columns ) ) {
+            $orderby = 'created_at';
+        }
+
+        $order = ( 'ASC' === strtoupper( $order ) ) ? 'ASC' : 'DESC';
 
         // Query
         $total_items = $wpdb->get_var( "SELECT COUNT(id) FROM $table_name" );

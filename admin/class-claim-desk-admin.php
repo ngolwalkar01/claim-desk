@@ -101,12 +101,12 @@ class Claim_Desk_Admin {
                 <a href="?page=claim-desk&tab=config" class="nav-tab <?php echo $active_tab == 'config' ? 'nav-tab-active' : ''; ?>"><?php _e( 'Configuration', 'claim-desk' ); ?></a>
             </nav>
 
-            <div class="claim-desk-content">
+            <div class="claim-desk-content" style="margin-top: 20px;">
                 <?php
-                if ( $active_tab == 'claims' ) {
-                    $this->display_plugin_dashboard();
+                if ( $active_tab == 'config' ) {
+                    require_once plugin_dir_path( __FILE__ ) . 'partials/claim-desk-admin-config.php';
                 } else {
-                    $this->display_plugin_configuration();
+                    $this->display_claims_list();
                 }
                 ?>
             </div>
@@ -115,17 +115,101 @@ class Claim_Desk_Admin {
     }
 
     /**
-     * Render the Claims List (Tab Content).
+     * Render the Claims List Table.
      */
-    public function display_plugin_dashboard() {
-        require_once plugin_dir_path( __FILE__ ) . 'partials/claim-desk-admin-display.php';
+    private function display_claims_list() {
+        if( isset($_GET['action']) && $_GET['action'] == 'view' && isset($_GET['id']) ) {
+             $this->display_claim_detail( intval($_GET['id']) );
+        } else {
+            require_once plugin_dir_path( __FILE__ ) . 'class-claim-desk-list-table.php';
+            $list_table = new Claim_Desk_List_Table();
+            $list_table->prepare_items();
+            
+            echo '<form method="get">';
+            echo '<input type="hidden" name="page" value="claim-desk" />';
+            $list_table->display();
+            echo '</form>';
+        }
     }
 
     /**
-     * Render the Configuration (Tab Content).
+     * Display Single Claim Detail.
      */
-    public function display_plugin_configuration() {
-        require_once plugin_dir_path( __FILE__ ) . 'partials/claim-desk-admin-config.php';
+    private function display_claim_detail( $claim_id ) {
+        global $wpdb;
+        $table_claims = $wpdb->prefix . 'cd_claims';
+        $table_items = $wpdb->prefix . 'cd_claim_items';
+
+        $claim = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_claims WHERE id = %d", $claim_id ) );
+        
+        if( ! $claim ) {
+            echo '<div class="error"><p>Claim not found.</p></div>';
+            return;
+        }
+
+        $items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table_items WHERE claim_id = %d", $claim_id ) );
+        $user = get_userdata( $claim->user_id );
+        
+        ?>
+        <div class="cd-detail-view">
+            <h3>
+                <?php printf( __('Claim #%d - Order #%d', 'claim-desk'), $claim->id, $claim->order_id ); ?>
+                <span class="cd-status-badge <?php echo $claim->status; ?>"><?php echo ucfirst($claim->status); ?></span>
+            </h3>
+            
+            <div class="card">
+                <h4>Customer Info</h4>
+                <p><strong>Name:</strong> <?php echo $user ? $user->display_name : 'Unknown'; ?></p>
+                <p><strong>Email:</strong> <?php echo $user ? $user->user_email : 'Unknown'; ?></p>
+                <p><strong>Date:</strong> <?php echo $claim->created_at; ?></p>
+            </div>
+
+            <div class="card" style="margin-top:20px;">
+                <h4>Claimed Items</h4>
+                <table class="widefat striped">
+                    <thead>
+                        <tr>
+                            <th>Item ID</th>
+                            <th>Product</th>
+                            <th>Qty Claimed</th>
+                            <th>Reason</th>
+                            <th>Details (JSON)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($items as $item): 
+                            $product = wc_get_product($item->product_id);
+                        ?>
+                        <tr>
+                            <td>#<?php echo $item->order_item_id; ?></td>
+                            <td>
+                                <?php echo $product ? $product->get_name() : 'Unknown Product'; ?>
+                            </td>
+                            <td><?php echo $item->qty_claimed; ?> / <?php echo $item->qty_total; ?></td>
+                            <td><?php echo $item->reason_slug; ?></td>
+                            <td>
+                                <pre><?php echo print_r(json_decode($item->dynamic_data, true), true); ?></pre>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card" style="margin-top:20px;">
+                <h4>Actions</h4>
+                <p>Status Management (Approve/Reject) coming soon.</p>
+                <a href="?page=claim-desk&tab=claims" class="button">Back to List</a>
+            </div>
+
+        </div>
+        <style>
+            .cd-status-badge { padding: 5px 10px; border-radius: 4px; color: #fff; font-size: 12px; margin-left: 10px; }
+            .cd-status-badge.pending { background: orange; }
+            .cd-status-badge.approved { background: green; }
+            .cd-status-badge.rejected { background: red; }
+        </style>
+        <?php
     }
 
 }
