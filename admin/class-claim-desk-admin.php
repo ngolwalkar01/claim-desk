@@ -225,8 +225,6 @@ class Claim_Desk_Admin {
         <?php
     }
 
-    }
-
     /**
      * Process Status Update (Approve/Reject).
      * Hooked to admin_init.
