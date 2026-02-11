@@ -15,9 +15,9 @@
         const $spinner = $('.cd-header .spinner');
 
         // Tabs
-        $('.nav-tab-wrapper a').on('click', function (e) {
+        $('.claim-desk-config-wrapper .nav-tab-wrapper a').on('click', function (e) {
             e.preventDefault();
-            $('.nav-tab').removeClass('nav-tab-active');
+            $('.claim-desk-config-wrapper .nav-tab').removeClass('nav-tab-active');
             $(this).addClass('nav-tab-active');
             $('.cd-tab-content').hide();
             $($(this).attr('href')).show();
