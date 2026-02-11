@@ -111,26 +111,36 @@
 
         renderProductCard: function (item, $container) {
             const self = this;
+            const available = parseInt(item.qty_available);
+            const isFullyClaimed = available <= 0;
+
+            let badgeHtml = '<span class="eligibility-badge badge-eligible">Eligible</span>';
+            if (isFullyClaimed) {
+                badgeHtml = '<span class="eligibility-badge badge-not-eligible">Already Claimed</span>';
+            }
+
             const html = `
-                <div class="product-card" data-item-id="${item.id}">
-                    <input type="checkbox" class="product-checkbox">
+                <div class="product-card ${isFullyClaimed ? 'disabled' : ''}" data-item-id="${item.id}">
+                    <input type="checkbox" class="product-checkbox" ${isFullyClaimed ? 'disabled' : ''}>
                     <img src="${item.image}" alt="${item.name}" class="product-image">
                     <div class="product-info">
                         <div class="product-name">${item.name}</div>
-                        <div class="product-meta">Purchased Qty: ${item.qty}</div>
-                        <span class="eligibility-badge badge-eligible">Eligible</span> 
+                        <div class="product-meta">Purchased: ${item.qty} | Available: ${available}</div>
+                        ${badgeHtml}
                     </div>
                     <div class="product-quantity">
                         <label class="quantity-label">Claim Qty:</label>
                         <select class="quantity-select" disabled>
                             <option value="0">Select</option>
-                            ${this.generateQtyOptions(item.qty)}
+                            ${this.generateQtyOptions(available)}
                         </select>
                     </div>
                 </div>
             `;
             const $card = $(html);
             $container.append($card);
+
+            if (isFullyClaimed) return; // No events for claimed items
 
             // Bind Card Events
             const $checkbox = $card.find('.product-checkbox');

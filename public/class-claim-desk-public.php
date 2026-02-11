@@ -182,6 +182,9 @@ class Claim_Desk_Public {
     /**
      * AJAX: Fetch order items for the modal logic.
      */
+    /**
+     * AJAX: Fetch order items for the modal logic.
+     */
     public function ajax_get_order_items() {
         check_ajax_referer( 'claim_desk_public_nonce', 'nonce' );
 
@@ -200,6 +203,21 @@ class Claim_Desk_Public {
             wp_send_json_error( __( 'Permission denied', 'claim-desk' ) );
         }
 
+        // Fetch existing claims to calculate available quantity
+        $db = new Claim_Desk_DB_Handler();
+        $claimed_items = $db->get_claimed_items_by_order( $order_id );
+        
+        // Map claimed quantities by order_item_id
+        $claimed_map = array();
+        if ( ! empty( $claimed_items ) ) {
+            foreach ( $claimed_items as $ci ) {
+                if ( ! isset( $claimed_map[ $ci->order_item_id ] ) ) {
+                    $claimed_map[ $ci->order_item_id ] = 0;
+                }
+                $claimed_map[ $ci->order_item_id ] += intval( $ci->qty_claimed );
+            }
+        }
+
         $items_data = array();
         foreach ( $order->get_items() as $item_id => $item ) {
             $product = $item->get_product();
@@ -207,12 +225,18 @@ class Claim_Desk_Public {
 
             $image_id = $product->get_image_id();
             $image_url = $image_id ? wp_get_attachment_image_url( $image_id, 'thumbnail' ) : wc_placeholder_img_src();
+            
+            $original_qty = $item->get_quantity();
+            $already_claimed = isset( $claimed_map[ $item_id ] ) ? $claimed_map[ $item_id ] : 0;
+            $available_qty = max( 0, $original_qty - $already_claimed );
 
             $items_data[] = array(
                 'id' => $item_id, // Line Item ID
                 'product_id' => $item->get_product_id(),
                 'name' => $item->get_name(),
-                'qty' => $item->get_quantity(),
+                'qty' => $original_qty,
+                'qty_claimed' => $already_claimed,
+                'qty_available' => $available_qty,
                 'image' => $image_url,
                 'price' => $order->get_formatted_line_subtotal( $item ),
             );

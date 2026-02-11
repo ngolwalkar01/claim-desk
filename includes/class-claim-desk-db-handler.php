@@ -88,4 +88,22 @@ class Claim_Desk_DB_Handler {
         return false;
     }
 
+    /**
+     * Get all claimed items for a specific order.
+     * 
+     * @param int $order_id
+     * @return array List of objects with order_item_id and qty_claimed
+     */
+    public function get_claimed_items_by_order( $order_id ) {
+        global $wpdb;
+        
+        $sql = "SELECT i.order_item_id, i.qty_claimed 
+                FROM {$this->table_items} i
+                JOIN {$this->table_claims} c ON i.claim_id = c.id
+                WHERE c.order_id = %d 
+                AND c.status != 'rejected'"; // Exclude rejected claims from count? Usually yes.
+                
+        return $wpdb->get_results( $wpdb->prepare( $sql, $order_id ) );
+    }
+
 }
