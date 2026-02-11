@@ -79,12 +79,6 @@ class Claim_Desk_List_Table extends WP_List_Table {
         return isset( $item->$column_name ) ? $item->$column_name : print_r( $item, true );
     }
 
-    public function column_cb( $item ) {
-        return sprintf(
-            '<input type="checkbox" name="claim[]" value="%s" />', $item->id
-        );
-    }
-
     public function column_id( $item ) {
         return '#' . $item->id;
     }
