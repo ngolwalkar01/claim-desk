@@ -129,4 +129,59 @@ class Claim_Desk_List_Table extends WP_List_Table {
         return sprintf( '<a href="%s" class="button">%s</a>', $url, $msg );
     }
 
+    public function get_bulk_actions() {
+        return array(
+            'delete' => __( 'Delete', 'claim-desk' ),
+            'reject' => __( 'Reject', 'claim-desk' ),
+            'approve' => __( 'Approve', 'claim-desk' )
+        );
+    }
+
+    public function process_bulk_action() {
+        $action = $this->current_action();
+        
+        if ( ! $action ) return;
+
+        // Security check
+        check_admin_referer( 'bulk-claims' );
+
+        $claim_ids = isset( $_REQUEST['claim'] ) ? array_map( 'intval', $_REQUEST['claim'] ) : array();
+
+        if ( empty( $claim_ids ) ) return;
+
+        global $wpdb;
+        $table_claims = $wpdb->prefix . 'cd_claims';
+        $table_items = $wpdb->prefix . 'cd_claim_items';
+
+        if ( 'delete' === $action ) {
+            foreach ( $claim_ids as $id ) {
+                $wpdb->delete( $table_items, array( 'claim_id' => $id ) );
+                $wpdb->delete( $table_claims, array( 'id' => $id ) );
+            }
+            echo '<div class="updated"><p>' . __( 'Claims deleted.', 'claim-desk' ) . '</p></div>';
+        }
+
+        if ( 'reject' === $action ) {
+            foreach ( $claim_ids as $id ) {
+                $wpdb->update( $table_claims, array( 'status' => 'rejected' ), array( 'id' => $id ) );
+            }
+            echo '<div class="updated"><p>' . __( 'Claims rejected.', 'claim-desk' ) . '</p></div>';
+        }
+
+        if ( 'approve' === $action ) {
+            foreach ( $claim_ids as $id ) {
+                $wpdb->update( $table_claims, array( 'status' => 'approved' ), array( 'id' => $id ) );
+            }
+            echo '<div class="updated"><p>' . __( 'Claims approved.', 'claim-desk' ) . '</p></div>';
+        }
+    }
+
+    // Fix for checkbox column to ensure it uses the correct column name
+    public function column_cb( $item ) {
+        return sprintf(
+            '<input type="checkbox" name="claim[]" value="%s" />', $item->id
+        );
+    }
+
+    // ... (rest of methods)
 }

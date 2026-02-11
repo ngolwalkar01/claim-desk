@@ -64,9 +64,12 @@ class Claim_Desk_Public {
 
         // Localize
         wp_localize_script( $this->plugin_name, 'claim_desk_public', array(
-            'ajax_url' => admin_url( 'admin-ajax.php' ),
-            'nonce'    => wp_create_nonce( 'claim_desk_public_nonce' ),
-            'scopes'   => Claim_Desk_Config_Manager::get_scopes()
+            'ajax_url'    => admin_url( 'admin-ajax.php' ),
+            'nonce'       => wp_create_nonce( 'claim_desk_public_nonce' ),
+            'scopes'      => Claim_Desk_Config_Manager::get_scopes(),
+            'resolutions' => Claim_Desk_Config_Manager::get_resolutions(),
+            'problems'    => Claim_Desk_Config_Manager::get_problems(),
+            'conditions'  => Claim_Desk_Config_Manager::get_conditions()
         ));
 
 	}

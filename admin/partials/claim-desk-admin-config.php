@@ -2,73 +2,98 @@
 <div class="wrap claim-desk-config-wrapper">
     
     <div class="cd-header">
-        <h2><?php _e( 'Claim Scopes & Fields', 'claim-desk' ); ?></h2>
-        <button id="cd-save-config" class="button button-primary"><?php _e( 'Save Configuration', 'claim-desk' ); ?></button>
+        <h2><?php _e( 'Configuration', 'claim-desk' ); ?></h2>
+        <button id="cd-save-config" class="button button-primary"><?php _e( 'Save Changes', 'claim-desk' ); ?></button>
         <span class="spinner"></span>
     </div>
 
+    <h2 class="nav-tab-wrapper">
+        <a href="#tab-general" class="nav-tab nav-tab-active"><?php _e('General Settings', 'claim-desk'); ?></a>
+        <a href="#tab-problems" class="nav-tab"><?php _e('Problem Types', 'claim-desk'); ?></a>
+        <a href="#tab-conditions" class="nav-tab"><?php _e('Product Conditions', 'claim-desk'); ?></a>
+    </h2>
+
     <div id="cd-config-container">
-        <!-- Scopes will be rendered here -->
-    </div>
-
-    <button id="cd-add-scope" class="button button-secondary"><?php _e( '+ Add New Scope', 'claim-desk' ); ?></button>
-
-    <!-- Templates (Hidden) -->
-    <script type="text/template" id="tmpl-cd-scope">
-        <div class="cd-scope-card postbox" data-slug="{{slug}}">
-            <div class="postbox-header">
-                <h2 class="hndle ui-sortable-handle">
-                    <span class="dashicons dashicons-{{icon}}"></span> 
-                    <span class="cd-scope-label-display">{{label}}</span>
-                </h2>
-                <div class="handle-actions">
-                    <button type="button" class="handlediv" aria-expanded="true"><span class="screen-reader-text">Toggle panel: {{label}}</span><span class="toggle-indicator" aria-hidden="true"></span></button>
-                    <button type="button" class="cd-remove-scope dashicons dashicons-trash"></button>
-                </div>
-            </div>
-            <div class="inside">
-                <div class="cd-row">
-                    <div class="cd-col">
-                        <label>Scope Label</label>
-                        <input type="text" class="regular-text cd-scope-label-input" value="{{label}}">
-                    </div>
-                    <div class="cd-col">
-                        <label>Scope Slug (Unique ID)</label>
-                        <input type="text" class="regular-text cd-scope-slug-input" value="{{slug}}" readonly>
-                    </div>
-                </div>
-                <div class="cd-row">
-                    <div class="cd-col">
-                        <label>Icon (Dashicon)</label>
-                        <input type="text" class="regular-text cd-scope-icon-input" value="{{icon}}">
-                        <small>e.g. 'truck', 'box', 'shield'</small>
-                    </div>
-                </div>
+        
+        <!-- General Tab -->
+        <div id="tab-general" class="cd-tab-content active">
+            <div class="card">
+                <h3><?php _e('Enabled Resolutions', 'claim-desk'); ?></h3>
+                <p><?php _e('Select which resolution types are available to customers.', 'claim-desk'); ?></p>
                 
-                <hr>
-
-                <div class="cd-split-view">
-                    <!-- Reasons Column -->
-                    <div class="cd-sub-section">
-                        <h3>Reasons</h3>
-                        <p class="description">Options for "What is the problem?"</p>
-                        <div class="cd-reasons-list">
-                            <!-- Reasons Rendered Here -->
-                        </div>
-                        <button class="button cd-add-reason">+ Add Reason</button>
-                    </div>
-
-                    <!-- Fields Column -->
-                    <div class="cd-sub-section">
-                        <h3>Dynamic Fields</h3>
-                        <p class="description">Extra inputs (e.g. Batch No, PO)</p>
-                        <div class="cd-fields-list">
-                            <!-- Fields Rendered Here -->
-                        </div>
-                        <button class="button cd-add-field">+ Add Field</button>
-                    </div>
-                </div>
+                <p>
+                    <label>
+                        <input type="checkbox" name="cd_resolution[]" value="return" id="res-return"> 
+                        <?php _e('Return & Refund', 'claim-desk'); ?>
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <input type="checkbox" name="cd_resolution[]" value="exchange" id="res-exchange"> 
+                        <?php _e('Exchange / Replacement', 'claim-desk'); ?>
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <input type="checkbox" name="cd_resolution[]" value="coupon" id="res-coupon"> 
+                        <?php _e('Store Credit / Coupon', 'claim-desk'); ?>
+                    </label>
+                </p>
             </div>
         </div>
+
+        <!-- Problems Tab -->
+        <div id="tab-problems" class="cd-tab-content" style="display:none;">
+            <div class="card">
+                <h3><?php _e('Problem Types', 'claim-desk'); ?></h3>
+                <p><?php _e('Define the reasons a customer can select for a claim.', 'claim-desk'); ?></p>
+                
+                <table class="widefat striped">
+                    <thead>
+                        <tr>
+                            <th><?php _e('Label', 'claim-desk'); ?></th>
+                            <th><?php _e('Value (Slug)', 'claim-desk'); ?></th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cd-problems-list">
+                        <!-- JS Rendered -->
+                    </tbody>
+                </table>
+                <p><button class="button" id="cd-add-problem">+ <?php _e('Add Problem Type', 'claim-desk'); ?></button></p>
+            </div>
+        </div>
+
+        <!-- Conditions Tab -->
+        <div id="tab-conditions" class="cd-tab-content" style="display:none;">
+            <div class="card">
+                <h3><?php _e('Product Conditions', 'claim-desk'); ?></h3>
+                <p><?php _e('Define the condition options available to users.', 'claim-desk'); ?></p>
+                
+                <table class="widefat striped">
+                    <thead>
+                        <tr>
+                            <th><?php _e('Label', 'claim-desk'); ?></th>
+                            <th><?php _e('Value (Slug)', 'claim-desk'); ?></th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cd-conditions-list">
+                        <!-- JS Rendered -->
+                    </tbody>
+                </table>
+                <p><button class="button" id="cd-add-condition">+ <?php _e('Add Condition', 'claim-desk'); ?></button></p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Templates -->
+    <script type="text/template" id="tmpl-cd-row">
+        <tr class="cd-item-row">
+            <td><input type="text" class="regular-text cd-item-label" value="{{label}}"></td>
+            <td><input type="text" class="regular-text cd-item-value" value="{{value}}"></td>
+            <td><span class="dashicons dashicons-trash cd-remove-row" style="cursor:pointer; color:red;"></span></td>
+        </tr>
     </script>
 </div>

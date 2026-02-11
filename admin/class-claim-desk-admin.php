@@ -123,10 +123,13 @@ class Claim_Desk_Admin {
         } else {
             require_once plugin_dir_path( __FILE__ ) . 'class-claim-desk-list-table.php';
             $list_table = new Claim_Desk_List_Table();
+            $list_table->process_bulk_action(); // Process actions before preparing items
             $list_table->prepare_items();
             
             echo '<form method="get">';
             echo '<input type="hidden" name="page" value="claim-desk" />';
+            // Nonce for bulk actions (action = bulk-claims)
+            wp_nonce_field( 'bulk-claims' );
             $list_table->display();
             echo '</form>';
         }

@@ -5,67 +5,45 @@
      * Claim Desk Admin Logic
      */
     $(document).ready(function () {
-        if ($('#cd-config-container').length) {
+        if ($('.claim-desk-config-wrapper').length) {
             initConfigPage();
         }
     });
 
     function initConfigPage() {
-        const $container = $('#cd-config-container');
         const $saveBtn = $('#cd-save-config');
         const $spinner = $('.cd-header .spinner');
+
+        // Tabs
+        $('.nav-tab-wrapper a').on('click', function (e) {
+            e.preventDefault();
+            $('.nav-tab').removeClass('nav-tab-active');
+            $(this).addClass('nav-tab-active');
+            $('.cd-tab-content').hide();
+            $($(this).attr('href')).show();
+        });
 
         // Load Config
         loadConfig();
 
-        // Handlers
+        // Save
         $saveBtn.on('click', saveConfig);
 
-        // Add Scope
-        $('#cd-add-scope').on('click', function (e) {
+        // Add Row Handlers
+        $('#cd-add-problem').on('click', function (e) {
             e.preventDefault();
-            const slug = prompt("Enter a unique ID for this scope (e.g., 'warranty', 'logistics'):");
-            if (slug) {
-                const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9_]/g, '');
-                renderScope({
-                    slug: cleanSlug,
-                    label: 'New Scope',
-                    icon: 'admin-generic',
-                    reasons: [],
-                    fields: []
-                });
+            renderRow($('#cd-problems-list'), { label: '', value: '' });
+        });
+        $('#cd-add-condition').on('click', function (e) {
+            e.preventDefault();
+            renderRow($('#cd-conditions-list'), { label: '', value: '' });
+        });
+
+        // Remove Row
+        $(document).on('click', '.cd-remove-row', function () {
+            if (confirm('Remove this item?')) {
+                $(this).closest('tr').remove();
             }
-        });
-
-        // Toggle Postbox
-        $container.on('click', '.handlediv', function () {
-            $(this).closest('.postbox').toggleClass('closed');
-        });
-
-        // Remove Scope
-        $container.on('click', '.cd-remove-scope', function () {
-            if (confirm('Are you sure you want to remove this scope?')) {
-                $(this).closest('.postbox').remove();
-            }
-        });
-
-        // Add Reason
-        $container.on('click', '.cd-add-reason', function (e) {
-            e.preventDefault();
-            const $list = $(this).siblings('.cd-reasons-list');
-            renderReasonRow($list, { slug: '', label: '' });
-        });
-
-        // Add Field
-        $container.on('click', '.cd-add-field', function (e) {
-            e.preventDefault();
-            const $list = $(this).siblings('.cd-fields-list');
-            renderFieldRow($list, { slug: '', label: '', type: 'text' });
-        });
-
-        // Remove Item (Row)
-        $container.on('click', '.cd-remove-item', function () {
-            $(this).closest('.cd-item-row').remove();
         });
 
         // --- functions ---
@@ -76,11 +54,27 @@
                 nonce: claim_desk_admin.nonce
             }, function (res) {
                 if (res.success) {
-                    const scopes = res.data;
-                    $container.empty();
-                    $.each(scopes, function (key, scope) {
-                        renderScope(scope);
-                    });
+                    const data = res.data;
+
+                    // Resolutions
+                    if (data.resolutions) {
+                        $('#res-return').prop('checked', data.resolutions.return);
+                        $('#res-exchange').prop('checked', data.resolutions.exchange);
+                        $('#res-coupon').prop('checked', data.resolutions.coupon);
+                    }
+
+                    // Problems
+                    $('#cd-problems-list').empty();
+                    if (data.problems) {
+                        data.problems.forEach(p => renderRow($('#cd-problems-list'), p));
+                    }
+
+                    // Conditions
+                    $('#cd-conditions-list').empty();
+                    if (data.conditions) {
+                        data.conditions.forEach(c => renderRow($('#cd-conditions-list'), c));
+                    }
+
                 } else {
                     alert('Failed to load config');
                 }
@@ -91,42 +85,35 @@
             $spinner.addClass('is-active');
             $saveBtn.prop('disabled', true);
 
-            const scopes = [];
-            $container.find('.cd-scope-card').each(function () {
-                const $card = $(this);
-                const scope = {
-                    slug: $card.find('.cd-scope-slug-input').val(),
-                    label: $card.find('.cd-scope-label-input').val(),
-                    icon: $card.find('.cd-scope-icon-input').val(),
-                    reasons: [],
-                    fields: []
-                };
+            // Gather Data
+            const resolutions = {
+                return: $('#res-return').is(':checked'),
+                exchange: $('#res-exchange').is(':checked'),
+                coupon: $('#res-coupon').is(':checked')
+            };
 
-                // Reasons
-                $card.find('.cd-reasons-list .cd-item-row').each(function () {
-                    scope.reasons.push({
-                        label: $(this).find('.cd-reason-label').val(),
-                        slug: $(this).find('.cd-reason-slug').val()
-                    });
+            const problems = [];
+            $('#cd-problems-list tr').each(function () {
+                problems.push({
+                    label: $(this).find('.cd-item-label').val(),
+                    value: $(this).find('.cd-item-value').val()
                 });
+            });
 
-                // Fields
-                $card.find('.cd-fields-list .cd-item-row').each(function () {
-                    scope.fields.push({
-                        label: $(this).find('.cd-field-label').val(),
-                        slug: $(this).find('.cd-field-slug').val(),
-                        type: $(this).find('.cd-field-type').val(),
-                        required: $(this).find('.cd-field-req').is(':checked')
-                    });
+            const conditions = [];
+            $('#cd-conditions-list tr').each(function () {
+                conditions.push({
+                    label: $(this).find('.cd-item-label').val(),
+                    value: $(this).find('.cd-item-value').val()
                 });
-
-                scopes.push(scope);
             });
 
             $.post(claim_desk_admin.ajax_url, {
                 action: 'claim_desk_save_config',
                 nonce: claim_desk_admin.nonce,
-                scopes: JSON.stringify(scopes)
+                resolutions: resolutions,
+                problems: JSON.stringify(problems),
+                conditions: JSON.stringify(conditions)
             }, function (res) {
                 $spinner.removeClass('is-active');
                 $saveBtn.prop('disabled', false);
@@ -138,55 +125,11 @@
             });
         }
 
-        function renderScope(scope) {
-            let tmpl = $('#tmpl-cd-scope').html();
-            tmpl = tmpl.replace(/{{label}}/g, scope.label)
-                .replace(/{{slug}}/g, scope.slug)
-                .replace(/{{icon}}/g, scope.icon);
-
-            const $el = $(tmpl);
-
-            // Populate Reasons
-            const $reasonsList = $el.find('.cd-reasons-list');
-            if (scope.reasons) {
-                scope.reasons.forEach(r => renderReasonRow($reasonsList, r));
-            }
-
-            // Populate Fields
-            const $fieldsList = $el.find('.cd-fields-list');
-            if (scope.fields) {
-                scope.fields.forEach(f => renderFieldRow($fieldsList, f));
-            }
-
-            $container.append($el);
-        }
-
-        function renderReasonRow($list, r) {
-            const html = `
-                <div class="cd-item-row">
-                    <input type="text" class="cd-reason-label" placeholder="Label (e.g. Broken)" value="${r.label}">
-                    <input type="text" class="cd-reason-slug" placeholder="Slug (e.g. broken)" value="${r.slug}">
-                    <span class="dashicons dashicons-trash cd-remove-item"></span>
-                </div>
-            `;
-            $list.append(html);
-        }
-
-        function renderFieldRow($list, f) {
-            const html = `
-                <div class="cd-item-row">
-                    <input type="text" class="cd-field-label" placeholder="Label (e.g. Batch No)" value="${f.label}">
-                    <input type="text" class="cd-field-slug" placeholder="Slug (e.g. batch_no)" value="${f.slug}">
-                    <select class="cd-field-type">
-                        <option value="text" ${f.type === 'text' ? 'selected' : ''}>Text</option>
-                        <option value="textarea" ${f.type === 'textarea' ? 'selected' : ''}>Textarea</option>
-                        <option value="number" ${f.type === 'number' ? 'selected' : ''}>Number</option>
-                    </select>
-                    <label><input type="checkbox" class="cd-field-req" ${f.required ? 'checked' : ''}> Req?</label>
-                    <span class="dashicons dashicons-trash cd-remove-item"></span>
-                </div>
-            `;
-            $list.append(html);
+        function renderRow($list, item) {
+            let tmpl = $('#tmpl-cd-row').html();
+            tmpl = tmpl.replace(/{{label}}/g, item.label)
+                .replace(/{{value}}/g, item.value);
+            $list.append(tmpl);
         }
 
     }

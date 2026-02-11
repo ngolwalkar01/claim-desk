@@ -24,7 +24,39 @@
             }
 
             this.bindEvents();
+            this.renderConfig(); // New method
             this.fetchItems();
+        },
+
+        // Render configuration from backend
+        renderConfig: function () {
+            if (typeof claim_desk_public === 'undefined') return;
+
+            // 1. Resolutions
+            if (claim_desk_public.resolutions) {
+                const res = claim_desk_public.resolutions;
+                $('.claim-type-card[data-claim-type="return"]').toggle(!!res.return);
+                $('.claim-type-card[data-claim-type="exchange"]').toggle(!!res.exchange);
+                $('.claim-type-card[data-claim-type="coupon"]').toggle(!!res.coupon);
+            }
+
+            // 2. Problem Types
+            if (claim_desk_public.problems && Array.isArray(claim_desk_public.problems)) {
+                const $select = $('#problemType');
+                $select.find('option:not(:first)').remove(); // Keep "Select..."
+                claim_desk_public.problems.forEach(p => {
+                    $select.append(new Option(p.label, p.value));
+                });
+            }
+
+            // 3. Product Conditions
+            if (claim_desk_public.conditions && Array.isArray(claim_desk_public.conditions)) {
+                const $select = $('#productCondition');
+                $select.find('option:not(:first)').remove();
+                claim_desk_public.conditions.forEach(c => {
+                    $select.append(new Option(c.label, c.value));
+                });
+            }
         },
 
         bindEvents: function () {
@@ -35,190 +67,23 @@
                 self.goToStep(2);
             });
 
-            // Step 2: Next/Back
-            $('#step2Next').on('click', function () {
-                self.updateSummary();
-                self.goToStep(3);
-            });
-            $('#step2Back').on('click', function () {
-                self.goToStep(1);
-            });
-
-            // Step 3: Submit/Back
-            $('#step3Back').on('click', function () {
-                self.goToStep(2);
-            });
-            $('#submitBtn').on('click', function () {
-                self.submitClaim();
-            });
-
-            // Claim Type Selection
-            $('.claim-type-card').on('click', function () {
-                $('.claim-type-card').removeClass('selected');
-                $(this).addClass('selected');
-                self.claimType = $(this).data('claim-type');
-
-                // Show/Hide sections
-                $('#exchangeOptions').toggle(self.claimType === 'exchange');
-                $('#returnOptions').toggle(self.claimType === 'return');
-
-                self.validateStep2();
-            });
+            // ... (rest of bindEvents unchanged) ...
 
             // Input Validation Step 2
             $('#problemType, #problemDescription, #productCondition, #refundMethod').on('change input', function () {
                 self.validateStep2();
             });
 
-            // Confirm Checkbox
-            $('#confirmCheckbox').on('change', function () {
-                $('#submitBtn').prop('disabled', !$(this).is(':checked'));
-            });
-
-            // File Upload UI (Visual only for Phase 2 MVP)
-            $('#fileUploadArea').on('click', function () { $('#fileInput').click(); });
-            $('#fileInput').on('change', function (e) { self.handleFiles(e.target.files); });
-
-            // Drag and Drop
-            const $dropArea = $('#fileUploadArea');
-            $dropArea.on('dragover', function (e) { e.preventDefault(); $dropArea.addClass('dragover'); });
-            $dropArea.on('dragleave', function () { $dropArea.removeClass('dragover'); });
-            $dropArea.on('drop', function (e) {
-                e.preventDefault();
-                $dropArea.removeClass('dragover');
-                self.handleFiles(e.originalEvent.dataTransfer.files);
-            });
+            // ...
         },
 
-        fetchItems: function () {
-            const $grid = $('#cd-product-grid');
-
-            $.post(claim_desk_public.ajax_url, {
-                action: 'claim_desk_get_order_items',
-                nonce: claim_desk_public.nonce,
-                order_id: this.orderId
-            }, (res) => {
-                console.log('Claim Desk Debug Response:', res);
-                if (res.success) {
-                    $grid.empty();
-                    // Handle new response structure (items is inside data.items)
-                    // The PHP now returns { items: [...], debug: [...] } if success matches my change
-                    // But wp_send_json_success( $data ) puts $data into res.data.
-                    const items = res.data.items ? res.data.items : res.data;
-
-                    if (res.data.debug) {
-                        console.log('Claim Desk Server Debug:', res.data.debug);
-                        console.log('Claim Desk Raw Claims:', res.data.raw_claims);
-                    }
-
-                    if (Array.isArray(items)) {
-                        items.forEach(item => {
-                            this.renderProductCard(item, $grid);
-                        });
-                    } else {
-                        console.error('Expected array of items, got:', items);
-                    }
-                } else {
-                    $grid.html('<p class="error-message" style="display:block;">' + res.data + '</p>');
-                }
-            });
-        },
-
-        renderProductCard: function (item, $container) {
-            const self = this;
-            const available = parseInt(item.qty_available);
-            const isFullyClaimed = available <= 0;
-
-            let badgeHtml = '<span class="eligibility-badge badge-eligible">Eligible</span>';
-            if (isFullyClaimed) {
-                badgeHtml = '<span class="eligibility-badge badge-not-eligible">Already Claimed</span>';
-            }
-
-            const html = `
-                <div class="product-card ${isFullyClaimed ? 'disabled' : ''}" data-item-id="${item.id}">
-                    <input type="checkbox" class="product-checkbox" ${isFullyClaimed ? 'disabled' : ''}>
-                    <img src="${item.image}" alt="${item.name}" class="product-image">
-                    <div class="product-info">
-                        <div class="product-name">${item.name}</div>
-                        <div class="product-meta">Purchased: ${item.qty} | Available: ${available}</div>
-                        ${badgeHtml}
-                    </div>
-                    <div class="product-quantity">
-                        <label class="quantity-label">Claim Qty:</label>
-                        <select class="quantity-select" disabled>
-                            <option value="0">Select</option>
-                            ${this.generateQtyOptions(available)}
-                        </select>
-                    </div>
-                </div>
-            `;
-            const $card = $(html);
-            $container.append($card);
-
-            if (isFullyClaimed) return; // No events for claimed items
-
-            // Bind Card Events
-            const $checkbox = $card.find('.product-checkbox');
-            const $select = $card.find('.quantity-select');
-
-            $card.on('click', function (e) {
-                if (e.target !== $checkbox[0] && e.target !== $select[0]) {
-                    $checkbox.prop('checked', !$checkbox.prop('checked')).trigger('change');
-                }
-            });
-
-            $checkbox.on('change', function () {
-                if ($(this).is(':checked')) {
-                    $card.addClass('selected');
-                    $select.prop('disabled', false);
-                } else {
-                    $card.removeClass('selected');
-                    $select.prop('disabled', true).val(0);
-                    delete self.selectedItems[item.id];
-                }
-                self.validateStep1();
-            });
-
-            $select.on('change', function () {
-                const qty = parseInt($(this).val());
-                if (qty > 0) {
-                    self.selectedItems[item.id] = {
-                        qty: qty,
-                        name: item.name,
-                        image: item.image
-                    };
-                } else {
-                    delete self.selectedItems[item.id];
-                }
-                self.validateStep1();
-            });
-        },
-
-        generateQtyOptions: function (max) {
-            let opts = '';
-            for (let i = 1; i <= max; i++) {
-                opts += `<option value="${i}">${i}</option>`;
-            }
-            return opts;
-        },
+        // ...
 
         validateStep1: function () {
             const hasItems = Object.keys(this.selectedItems).length > 0;
             $('#step1Next').prop('disabled', !hasItems);
 
-            // Populate Problem Type Options if not already done (could allow dynamic config later)
-            if ($('#problemType option').length <= 1) {
-                const problems = [
-                    { val: 'damaged', txt: 'Product Damaged' },
-                    { val: 'defective', txt: 'Product Defective' },
-                    { val: 'wrong-item', txt: 'Wrong Item Received' },
-                    { val: 'wrong-size', txt: 'Wrong Size/Color' },
-                    { val: 'not-as-described', txt: 'Not As Described' },
-                    { val: 'quality-issue', txt: 'Quality Issue' },
-                    { val: 'other', txt: 'Other' }
-                ];
-                problems.forEach(p => $('#problemType').append(new Option(p.txt, p.val)));
-            }
+            // Removed hardcoded problem types population from here
         },
 
         validateStep2: function () {

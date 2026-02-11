@@ -39,32 +39,50 @@ class Claim_Desk_Config_Manager {
      * ]
      */
     public static function get_scopes() {
-        $defaults = array(
-            'quality' => array(
-                'slug'    => 'quality',
-                'label'   => __( 'Product Quality', 'claim-desk' ),
-                'icon'    => 'box', // dashicon suffix
-                'reasons' => array(
-                    array( 'slug' => 'defective', 'label' => 'Defective' ),
-                    array( 'slug' => 'damaged', 'label' => 'Damaged' )
-                ),
-                'fields'  => array(
-                    array( 'slug' => 'description', 'type' => 'textarea', 'label' => 'Description', 'required' => true )
-                )
-            ),
-            'delivery' => array(
-                'slug'    => 'delivery',
-                'label'   => __( 'Delivery Issue', 'claim-desk' ),
-                'icon'    => 'truck',
-                'reasons' => array(
-                    array( 'slug' => 'not_received', 'label' => 'Not Received' ),
-                    array( 'slug' => 'late', 'label' => 'Arrived Late' )
-                ),
-                'fields'  => array()
-            )
-        );
+        // This method was for the old idea of "Scopes". 
+        // We are moving to a flatter structure: Resolutions, Problems, Conditions.
+        // We will keep this for backward compatibility if needed, or deprecate.
+        return get_option( self::OPTION_SCOPES, array() );
+    }
 
-        return get_option( self::OPTION_SCOPES, $defaults );
+    /**
+     * Get configured resolutions (Return, Exchange, Coupon).
+     */
+    public static function get_resolutions() {
+        $defaults = array(
+            'return'   => true,
+            'exchange' => true,
+            'coupon'   => true
+        );
+        return get_option( 'claim_desk_resolutions', $defaults );
+    }
+
+    /**
+     * Get configured problem types.
+     */
+    public static function get_problems() {
+        $defaults = array(
+            array( 'value' => 'damaged', 'label' => __( 'Product Damaged', 'claim-desk' ) ),
+            array( 'value' => 'defective', 'label' => __( 'Product Defective', 'claim-desk' ) ),
+            array( 'value' => 'wrong-item', 'label' => __( 'Wrong Item Received', 'claim-desk' ) ),
+            array( 'value' => 'wrong-size', 'label' => __( 'Wrong Size/Color', 'claim-desk' ) ),
+            array( 'value' => 'not-as-described', 'label' => __( 'Not As Described', 'claim-desk' ) ),
+            array( 'value' => 'quality-issue', 'label' => __( 'Quality Issue', 'claim-desk' ) ),
+            array( 'value' => 'other', 'label' => __( 'Other', 'claim-desk' ) )
+        );
+        return get_option( 'claim_desk_problems', $defaults );
+    }
+
+    /**
+     * Get configured product conditions.
+     */
+    public static function get_conditions() {
+        $defaults = array(
+            array( 'value' => 'unopened', 'label' => __( 'Unopened', 'claim-desk' ) ),
+            array( 'value' => 'opened', 'label' => __( 'Opened', 'claim-desk' ) ),
+            array( 'value' => 'damaged', 'label' => __( 'Damaged', 'claim-desk' ) )
+        );
+        return get_option( 'claim_desk_conditions', $defaults );
     }
 
     /**
@@ -77,38 +95,39 @@ class Claim_Desk_Config_Manager {
             wp_send_json_error( __( 'Permission denied.', 'claim-desk' ) );
         }
 
-        $scopes = isset( $_POST['scopes'] ) ? json_decode( stripslashes( $_POST['scopes'] ), true ) : null;
-
-        if ( ! is_array( $scopes ) ) {
-            wp_send_json_error( __( 'Invalid data format.', 'claim-desk' ) );
+        // Save Resolutions
+        if ( isset( $_POST['resolutions'] ) ) {
+            $resolutions = array_map( function($val) { return $val === 'true' || $val === '1'; }, $_POST['resolutions'] );
+            update_option( 'claim_desk_resolutions', $resolutions );
         }
 
-        // Sanitize data (Basic sanitization for structured array)
-        $clean_scopes = array();
-        foreach ( $scopes as $key => $scope ) {
-            $slug = sanitize_key( $scope['slug'] );
-            $clean_scopes[ $slug ] = array(
-                'slug'    => $slug,
-                'label'   => sanitize_text_field( $scope['label'] ),
-                'icon'    => sanitize_html_class( $scope['icon'] ),
-                'reasons' => array_map( function( $r ) {
+        // Save Problems
+        if ( isset( $_POST['problems'] ) ) {
+            $problems = json_decode( stripslashes( $_POST['problems'] ), true );
+            if ( is_array( $problems ) ) {
+                $clean_problems = array_map( function($p) {
                     return array(
-                        'slug'  => sanitize_key( $r['slug'] ),
-                        'label' => sanitize_text_field( $r['label'] )
+                        'value' => sanitize_title( $p['value'] ),
+                        'label' => sanitize_text_field( $p['label'] )
                     );
-                }, isset($scope['reasons']) ? $scope['reasons'] : [] ),
-                'fields'  => array_map( function( $f ) {
-                    return array(
-                        'slug'     => sanitize_key( $f['slug'] ),
-                        'type'     => sanitize_key( $f['type'] ),
-                        'label'    => sanitize_text_field( $f['label'] ),
-                        'required' => !empty($f['required'])
-                    );
-                }, isset($scope['fields']) ? $scope['fields'] : [] )
-            );
+                }, $problems );
+                update_option( 'claim_desk_problems', $clean_problems );
+            }
         }
 
-        update_option( self::OPTION_SCOPES, $clean_scopes );
+        // Save Conditions
+        if ( isset( $_POST['conditions'] ) ) {
+            $conditions = json_decode( stripslashes( $_POST['conditions'] ), true );
+            if ( is_array( $conditions ) ) {
+                $clean_conditions = array_map( function($c) {
+                    return array(
+                        'value' => sanitize_title( $c['value'] ),
+                        'label' => sanitize_text_field( $c['label'] )
+                    );
+                }, $conditions );
+                update_option( 'claim_desk_conditions', $clean_conditions );
+            }
+        }
 
         wp_send_json_success( __( 'Configuration saved.', 'claim-desk' ) );
     }
@@ -118,7 +137,14 @@ class Claim_Desk_Config_Manager {
      */
     public function ajax_get_config() {
         check_ajax_referer( 'claim_desk_admin_nonce', 'nonce' );
-        wp_send_json_success( self::get_scopes() );
+        
+        $data = array(
+            'resolutions' => self::get_resolutions(),
+            'problems'    => self::get_problems(),
+            'conditions'  => self::get_conditions()
+        );
+
+        wp_send_json_success( $data );
     }
 
 }
