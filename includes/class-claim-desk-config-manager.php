@@ -43,7 +43,45 @@ class Claim_Desk_Config_Manager {
         return get_option( self::OPTION_SCOPES, array() );
     }
 
-    // ... (get_resolutions, get_problems, get_conditions remain same)
+    /**
+     * Get configured resolutions (Return, Exchange, Coupon).
+     */
+    public static function get_resolutions() {
+        $defaults = array(
+            'return'   => true,
+            'exchange' => true,
+            'coupon'   => true
+        );
+        return get_option( 'claim_desk_resolutions', $defaults );
+    }
+
+    /**
+     * Get configured problem types.
+     */
+    public static function get_problems() {
+        $defaults = array(
+            array( 'value' => 'damaged', 'label' => __( 'Product Damaged', 'claim-desk' ) ),
+            array( 'value' => 'defective', 'label' => __( 'Product Defective', 'claim-desk' ) ),
+            array( 'value' => 'wrong-item', 'label' => __( 'Wrong Item Received', 'claim-desk' ) ),
+            array( 'value' => 'wrong-size', 'label' => __( 'Wrong Size/Color', 'claim-desk' ) ),
+            array( 'value' => 'not-as-described', 'label' => __( 'Not As Described', 'claim-desk' ) ),
+            array( 'value' => 'quality-issue', 'label' => __( 'Quality Issue', 'claim-desk' ) ),
+            array( 'value' => 'other', 'label' => __( 'Other', 'claim-desk' ) )
+        );
+        return get_option( 'claim_desk_problems', $defaults );
+    }
+
+    /**
+     * Get configured product conditions.
+     */
+    public static function get_conditions() {
+        $defaults = array(
+            array( 'value' => 'unopened', 'label' => __( 'Unopened', 'claim-desk' ) ),
+            array( 'value' => 'opened', 'label' => __( 'Opened', 'claim-desk' ) ),
+            array( 'value' => 'damaged', 'label' => __( 'Damaged', 'claim-desk' ) )
+        );
+        return get_option( 'claim_desk_conditions', $defaults );
+    }
 
     /**
      * AJAX Handler: Save Configuration.
