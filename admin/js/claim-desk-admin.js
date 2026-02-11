@@ -41,7 +41,9 @@
 
         // Remove Row
         // Legacy Scopes Handlers
-        $('#cd-add-scope').on('click', function (e) {
+        // Legacy Scopes Handlers
+        // Use document delegation to ensure it works even if DOM is tricky
+        $(document).on('click', '#cd-add-scope', function (e) {
             e.preventDefault();
             const slug = prompt('Enter Scope Slug (e.g. quality, shipping):');
             if (slug) {
