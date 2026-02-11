@@ -98,11 +98,26 @@
                 nonce: claim_desk_public.nonce,
                 order_id: this.orderId
             }, (res) => {
+                console.log('Claim Desk Debug Response:', res);
                 if (res.success) {
                     $grid.empty();
-                    res.data.forEach(item => {
-                        this.renderProductCard(item, $grid);
-                    });
+                    // Handle new response structure (items is inside data.items)
+                    // The PHP now returns { items: [...], debug: [...] } if success matches my change
+                    // But wp_send_json_success( $data ) puts $data into res.data.
+                    const items = res.data.items ? res.data.items : res.data;
+
+                    if (res.data.debug) {
+                        console.log('Claim Desk Server Debug:', res.data.debug);
+                        console.log('Claim Desk Raw Claims:', res.data.raw_claims);
+                    }
+
+                    if (Array.isArray(items)) {
+                        items.forEach(item => {
+                            this.renderProductCard(item, $grid);
+                        });
+                    } else {
+                        console.error('Expected array of items, got:', items);
+                    }
                 } else {
                     $grid.html('<p class="error-message" style="display:block;">' + res.data + '</p>');
                 }

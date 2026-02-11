@@ -219,6 +219,8 @@ class Claim_Desk_Public {
         }
 
         $items_data = array();
+        $debug_logs = array();
+
         foreach ( $order->get_items() as $item_id => $item ) {
             $product = $item->get_product();
             if ( ! $product ) continue;
@@ -229,6 +231,8 @@ class Claim_Desk_Public {
             $original_qty = $item->get_quantity();
             $already_claimed = isset( $claimed_map[ $item_id ] ) ? $claimed_map[ $item_id ] : 0;
             $available_qty = max( 0, $original_qty - $already_claimed );
+
+            $debug_logs[] = "Item ID: $item_id | Original: $original_qty | Claimed Map Value: " . (isset($claimed_map[$item_id]) ? $claimed_map[$item_id] : 'NULL');
 
             $items_data[] = array(
                 'id' => $item_id, // Line Item ID
@@ -242,7 +246,7 @@ class Claim_Desk_Public {
             );
         }
 
-        wp_send_json_success( $items_data );
+        wp_send_json_success( array( 'items' => $items_data, 'debug' => $debug_logs, 'raw_claims' => $claimed_items ) );
     }
 
     /**
