@@ -177,14 +177,80 @@
                 self.goToStep(2);
             });
 
-            // ... (rest of bindEvents unchanged) ...
+            // Step 2: Back
+            $('#step2Back').on('click', function () {
+                self.goToStep(1);
+            });
 
-            // Input Validation Step 2
-            $('#problemType, #problemDescription, #productCondition, #refundMethod').on('change input', function () {
+            // Step 2: Next
+            $('#step2Next').on('click', function () {
+                self.updateSummary();
+                self.goToStep(3);
+            });
+
+            // Step 3: Back
+            $('#step3Back').on('click', function () {
+                self.goToStep(2);
+            });
+
+            // Submit
+            $('#submitBtn').on('click', function () {
+                self.submitClaim();
+            });
+
+            // Claim Type Selection
+            $('.claim-type-card').on('click', function () {
+                $('.claim-type-card').removeClass('selected');
+                $(this).addClass('selected');
+                self.claimType = $(this).data('claim-type');
+
+                // Show/Hide Fields
+                if (self.claimType === 'exchange') {
+                    $('#exchangeOptions').slideDown();
+                    $('#returnOptions').slideUp();
+                } else if (self.claimType === 'return') {
+                    $('#exchangeOptions').slideUp();
+                    $('#returnOptions').slideDown();
+                } else {
+                    $('#exchangeOptions').slideUp();
+                    $('#returnOptions').slideUp();
+                }
                 self.validateStep2();
             });
 
-            // ...
+            // File Upload
+            $('#fileUploadArea').on('click', function () {
+                $('#fileInput').click();
+            });
+
+            $('#fileInput').on('change', function (e) {
+                self.handleFiles(e.target.files);
+            });
+
+            /* Drag & Drop */
+            const $dropArea = $('#fileUploadArea');
+            $dropArea.on('dragover', function (e) {
+                e.preventDefault();
+                $(this).addClass('dragover');
+            });
+            $dropArea.on('dragleave drop', function (e) {
+                e.preventDefault();
+                $(this).removeClass('dragover');
+            });
+            $dropArea.on('drop', function (e) {
+                const files = e.originalEvent.dataTransfer.files;
+                self.handleFiles(files);
+            });
+
+            // Input Validation Step 2
+            $('#problemType, #problemDescription, #productCondition, #refundMethod, #replacementSize, #replacementColor').on('change input', function () {
+                self.validateStep2();
+            });
+
+            // Confirm Checkbox
+            $('#confirmCheckbox').on('change', function () {
+                $('#submitBtn').prop('disabled', !$(this).is(':checked'));
+            });
         },
 
         // ...
