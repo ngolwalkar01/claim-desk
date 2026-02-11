@@ -191,7 +191,19 @@ class Claim_Desk_Admin {
                             <td><?php echo $item->qty_claimed; ?> / <?php echo $item->qty_total; ?></td>
                             <td><?php echo $item->reason_slug; ?></td>
                             <td>
-                                <pre><?php echo print_r(json_decode($item->dynamic_data, true), true); ?></pre>
+                                <?php 
+                                $data = json_decode($item->dynamic_data, true);
+                                if ( ! empty($data) && is_array($data) ) {
+                                    echo '<ul class="cd-data-list" style="margin:0; padding-left:15px;">';
+                                    foreach ($data as $key => $value) {
+                                        $label = ucwords(str_replace(['_', '-'], ' ', $key));
+                                        echo '<li><strong>' . esc_html($label) . ':</strong> ' . esc_html($value) . '</li>';
+                                    }
+                                    echo '</ul>';
+                                } else {
+                                    echo '<span class="description">No additional details</span>';
+                                }
+                                ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
