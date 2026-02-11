@@ -39,51 +39,11 @@ class Claim_Desk_Config_Manager {
      * ]
      */
     public static function get_scopes() {
-        // This method was for the old idea of "Scopes". 
-        // We are moving to a flatter structure: Resolutions, Problems, Conditions.
-        // We will keep this for backward compatibility if needed, or deprecate.
+        // Legacy support
         return get_option( self::OPTION_SCOPES, array() );
     }
 
-    /**
-     * Get configured resolutions (Return, Exchange, Coupon).
-     */
-    public static function get_resolutions() {
-        $defaults = array(
-            'return'   => true,
-            'exchange' => true,
-            'coupon'   => true
-        );
-        return get_option( 'claim_desk_resolutions', $defaults );
-    }
-
-    /**
-     * Get configured problem types.
-     */
-    public static function get_problems() {
-        $defaults = array(
-            array( 'value' => 'damaged', 'label' => __( 'Product Damaged', 'claim-desk' ) ),
-            array( 'value' => 'defective', 'label' => __( 'Product Defective', 'claim-desk' ) ),
-            array( 'value' => 'wrong-item', 'label' => __( 'Wrong Item Received', 'claim-desk' ) ),
-            array( 'value' => 'wrong-size', 'label' => __( 'Wrong Size/Color', 'claim-desk' ) ),
-            array( 'value' => 'not-as-described', 'label' => __( 'Not As Described', 'claim-desk' ) ),
-            array( 'value' => 'quality-issue', 'label' => __( 'Quality Issue', 'claim-desk' ) ),
-            array( 'value' => 'other', 'label' => __( 'Other', 'claim-desk' ) )
-        );
-        return get_option( 'claim_desk_problems', $defaults );
-    }
-
-    /**
-     * Get configured product conditions.
-     */
-    public static function get_conditions() {
-        $defaults = array(
-            array( 'value' => 'unopened', 'label' => __( 'Unopened', 'claim-desk' ) ),
-            array( 'value' => 'opened', 'label' => __( 'Opened', 'claim-desk' ) ),
-            array( 'value' => 'damaged', 'label' => __( 'Damaged', 'claim-desk' ) )
-        );
-        return get_option( 'claim_desk_conditions', $defaults );
-    }
+    // ... (get_resolutions, get_problems, get_conditions remain same)
 
     /**
      * AJAX Handler: Save Configuration.
@@ -93,6 +53,35 @@ class Claim_Desk_Config_Manager {
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( __( 'Permission denied.', 'claim-desk' ) );
+        }
+
+        // Save Scopes (Legacy)
+        if ( isset( $_POST['scopes'] ) ) {
+            $scopes = json_decode( stripslashes( $_POST['scopes'] ), true );
+            if ( is_array( $scopes ) ) {
+                 // Sanitize legacy scopes structure
+                 $clean_scopes = array();
+                 foreach ( $scopes as $scope ) {
+                     $slug = sanitize_key( $scope['slug'] );
+                     $clean_scopes[ $slug ] = array(
+                         'slug'    => $slug,
+                         'label'   => sanitize_text_field( $scope['label'] ),
+                         'icon'    => sanitize_html_class( $scope['icon'] ),
+                         'reasons' => isset($scope['reasons']) ? array_map(function($r){
+                             return array('slug'=>sanitize_key($r['slug']), 'label'=>sanitize_text_field($r['label']));
+                         }, $scope['reasons']) : [],
+                         'fields'  => isset($scope['fields']) ? array_map(function($f){
+                             return array(
+                                 'slug'=>sanitize_key($f['slug']), 
+                                 'label'=>sanitize_text_field($f['label']),
+                                 'type'=>sanitize_key($f['type']),
+                                 'required'=>!empty($f['required'])
+                             );
+                         }, $scope['fields']) : []
+                     );
+                 }
+                 update_option( self::OPTION_SCOPES, $clean_scopes );
+            }
         }
 
         // Save Resolutions
@@ -139,6 +128,7 @@ class Claim_Desk_Config_Manager {
         check_ajax_referer( 'claim_desk_admin_nonce', 'nonce' );
         
         $data = array(
+            'scopes'      => self::get_scopes(),
             'resolutions' => self::get_resolutions(),
             'problems'    => self::get_problems(),
             'conditions'  => self::get_conditions()

@@ -59,6 +59,38 @@
             }
         },
 
+        fetchItems: function () {
+            const $grid = $('#cd-product-grid');
+
+            $.post(claim_desk_public.ajax_url, {
+                action: 'claim_desk_get_order_items',
+                nonce: claim_desk_public.nonce,
+                order_id: this.orderId
+            }, (res) => {
+                console.log('Claim Desk Debug Response:', res);
+                if (res.success) {
+                    $grid.empty();
+                    // Handle new response structure (items is inside data.items)
+                    const items = res.data.items ? res.data.items : res.data;
+
+                    if (res.data.debug) {
+                        console.log('Claim Desk Server Debug:', res.data.debug);
+                        console.log('Claim Desk Raw Claims:', res.data.raw_claims);
+                    }
+
+                    if (Array.isArray(items)) {
+                        items.forEach(item => {
+                            this.renderProductCard(item, $grid);
+                        });
+                    } else {
+                        console.error('Expected array of items, got:', items);
+                    }
+                } else {
+                    $grid.html('<p class="error-message" style="display:block;">' + res.data + '</p>');
+                }
+            });
+        },
+
         bindEvents: function () {
             const self = this;
 

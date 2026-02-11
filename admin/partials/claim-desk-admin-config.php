@@ -11,13 +11,15 @@
         <a href="#tab-general" class="nav-tab nav-tab-active"><?php _e('General Settings', 'claim-desk'); ?></a>
         <a href="#tab-problems" class="nav-tab"><?php _e('Problem Types', 'claim-desk'); ?></a>
         <a href="#tab-conditions" class="nav-tab"><?php _e('Product Conditions', 'claim-desk'); ?></a>
+        <a href="#tab-legacy" class="nav-tab"><?php _e('Advanced Scopes (Legacy)', 'claim-desk'); ?></a>
     </h2>
 
     <div id="cd-config-container">
         
         <!-- General Tab -->
         <div id="tab-general" class="cd-tab-content active">
-            <div class="card">
+            <!-- (Content maintained) -->
+             <div class="card">
                 <h3><?php _e('Enabled Resolutions', 'claim-desk'); ?></h3>
                 <p><?php _e('Select which resolution types are available to customers.', 'claim-desk'); ?></p>
                 
@@ -44,6 +46,7 @@
 
         <!-- Problems Tab -->
         <div id="tab-problems" class="cd-tab-content" style="display:none;">
+             <!-- (Content maintained) -->
             <div class="card">
                 <h3><?php _e('Problem Types', 'claim-desk'); ?></h3>
                 <p><?php _e('Define the reasons a customer can select for a claim.', 'claim-desk'); ?></p>
@@ -66,6 +69,7 @@
 
         <!-- Conditions Tab -->
         <div id="tab-conditions" class="cd-tab-content" style="display:none;">
+            <!-- (Content maintained) -->
             <div class="card">
                 <h3><?php _e('Product Conditions', 'claim-desk'); ?></h3>
                 <p><?php _e('Define the condition options available to users.', 'claim-desk'); ?></p>
@@ -86,6 +90,18 @@
             </div>
         </div>
 
+        <!-- Legacy Tab -->
+        <div id="tab-legacy" class="cd-tab-content" style="display:none;">
+            <div class="card">
+                 <h3><?php _e('Advanced Scopes (JSON Config)', 'claim-desk'); ?></h3>
+                 <p class="description"><?php _e('This is the legacy configuration method. It allows complex nested rules but is harder to manage.', 'claim-desk'); ?></p>
+                 <div id="cd-legacy-scopes-container">
+                     <!-- Scopes Rendered Here -->
+                 </div>
+                 <button id="cd-add-scope" class="button button-secondary"><?php _e( '+ Add New Scope', 'claim-desk' ); ?></button>
+            </div>
+        </div>
+
     </div>
 
     <!-- Templates -->
@@ -96,4 +112,40 @@
             <td><span class="dashicons dashicons-trash cd-remove-row" style="cursor:pointer; color:red;"></span></td>
         </tr>
     </script>
-</div>
+
+    <!-- Legacy Template -->
+    <script type="text/template" id="tmpl-cd-scope">
+        <div class="cd-scope-card postbox" data-slug="{{slug}}" style="margin-top:10px;">
+            <div class="postbox-header" style="padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                <h3 class="hndle" style="margin:0;">
+                    <span class="dashicons dashicons-{{icon}}"></span> 
+                    <span class="cd-scope-label-display">{{label}}</span>
+                </h3>
+                <div class="handle-actions">
+                     <button type="button" class="cd-remove-scope dashicons dashicons-trash" style="color:red; cursor:pointer; border:none; background:none;"></button>
+                </div>
+            </div>
+            <div class="inside" style="padding:10px;">
+                <div class="cd-row">
+                    <label>Label: <input type="text" class="cd-scope-label-input" value="{{label}}"></label>
+                    <label>Slug: <input type="text" class="cd-scope-slug-input" value="{{slug}}" readonly style="background:#eee;"></label>
+                    <label>Icon: <input type="text" class="cd-scope-icon-input" value="{{icon}}"></label>
+                </div>
+                
+                <hr>
+
+                <div class="cd-split-view" style="display:flex; gap:20px;">
+                    <div class="cd-sub-section" style="flex:1;">
+                        <h4>Reasons</h4>
+                        <div class="cd-reasons-list"></div>
+                        <button class="button cd-add-reason">+ Add Reason</button>
+                    </div>
+                    <div class="cd-sub-section" style="flex:1;">
+                        <h4>Fields</h4>
+                        <div class="cd-fields-list"></div>
+                        <button class="button cd-add-field">+ Add Field</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
