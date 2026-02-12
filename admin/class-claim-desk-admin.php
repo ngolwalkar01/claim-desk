@@ -191,9 +191,6 @@ class Claim_Desk_Admin {
                             <td><?php echo esc_html($item->qty_claimed); ?> / <?php echo esc_html($item->qty_total); ?></td>
                             <td><?php echo esc_html($item->reason_slug); ?></td>
                             <td>
-<<<<<<< HEAD
-                                <pre><?php echo esc_html(print_r(json_decode($item->dynamic_data, true), true)); ?></pre>
-=======
                                 <?php 
                                 $data = json_decode($item->dynamic_data, true);
                                 if ( ! empty($data) && is_array($data) ) {
@@ -207,7 +204,6 @@ class Claim_Desk_Admin {
                                     echo '<span class="description">No additional details</span>';
                                 }
                                 ?>
->>>>>>> 15dc740136b5268baba5e824f65eb8ac105d49da
                             </td>
                         </tr>
                         <?php endforeach; ?>
