@@ -5,19 +5,19 @@
  * This file is read by WordPress to generate the plugin information in the plugin
  * administrative area. This file also includes all of the plugin dependencies.
  *
- * @link              https://example.com
- * @since             1.0.1
+ * @link              https://prozoned.com/claimdesk
+ * @since             1.0.0
  * @package           Claim_Desk
  *
  * @wordpress-plugin
- * Plugin Name:       Claim Desk
- * Plugin URI:        https://example.com/plugin-name
- * Description:       A generalized, multi-industry claim management system for WooCommerce with custom tables.
- * Version:           1.0.8
- * Author:            Your Name
- * Author URI:        https://example.com
+ * Plugin Name:       ClaimDesk
+ * Plugin URI:        https://prozoned.com/claimdesk
+ * Description:       Manage WooCommerce product return and exchange claims using a guided multi-step claim submission system.
+ * Version:           1.0.0
+ * Author:            Prozoned
+ * Author URI:        https://prozoned.com
  * License:           GPL-2.0+
- * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       claim-desk
  * Domain Path:       /languages
  */
