@@ -162,9 +162,9 @@ class Claim_Desk_Admin {
             
             <div class="card">
                 <h4>Customer Info</h4>
-                <p><strong>Name:</strong> <?php echo $user ? $user->display_name : 'Unknown'; ?></p>
-                <p><strong>Email:</strong> <?php echo $user ? $user->user_email : 'Unknown'; ?></p>
-                <p><strong>Date:</strong> <?php echo $claim->created_at; ?></p>
+                <p><strong>Name:</strong> <?php echo $user ? esc_html($user->display_name) : 'Unknown'; ?></p>
+                <p><strong>Email:</strong> <?php echo $user ? esc_html($user->user_email) : 'Unknown'; ?></p>
+                <p><strong>Date:</strong> <?php echo esc_html($claim->created_at); ?></p>
             </div>
 
             <div class="card" style="margin-top:20px;">
@@ -184,14 +184,14 @@ class Claim_Desk_Admin {
                             $product = wc_get_product($item->product_id);
                         ?>
                         <tr>
-                            <td>#<?php echo $item->order_item_id; ?></td>
+                            <td>#<?php echo esc_html($item->order_item_id); ?></td>
                             <td>
-                                <?php echo $product ? $product->get_name() : 'Unknown Product'; ?>
+                                <?php echo $product ? esc_html($product->get_name()) : 'Unknown Product'; ?>
                             </td>
-                            <td><?php echo $item->qty_claimed; ?> / <?php echo $item->qty_total; ?></td>
-                            <td><?php echo $item->reason_slug; ?></td>
+                            <td><?php echo esc_html($item->qty_claimed); ?> / <?php echo esc_html($item->qty_total); ?></td>
+                            <td><?php echo esc_html($item->reason_slug); ?></td>
                             <td>
-                                <pre><?php echo print_r(json_decode($item->dynamic_data, true), true); ?></pre>
+                                <pre><?php echo esc_html(print_r(json_decode($item->dynamic_data, true), true)); ?></pre>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -204,7 +204,7 @@ class Claim_Desk_Admin {
                 <form method="post" action="">
                     <?php wp_nonce_field( 'claim_desk_action', 'claim_desk_nonce' ); ?>
                     <input type="hidden" name="action" value="claim_desk_update_status">
-                    <input type="hidden" name="claim_id" value="<?php echo $claim_id; ?>">
+                    <input type="hidden" name="claim_id" value="<?php echo esc_attr($claim_id); ?>">
                     
                     <?php if ( $claim->status !== 'approved' ): ?>
                         <button type="submit" name="status" value="approved" class="button button-primary" style="background:green; border-color:darkgreen;">Approve Claim</button>

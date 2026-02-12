@@ -80,20 +80,20 @@ class Claim_Desk_List_Table extends WP_List_Table {
     }
 
     public function column_id( $item ) {
-        return '#' . $item->id;
+        return '#' . esc_html($item->id);
     }
 
     public function column_order( $item ) {
         $order = wc_get_order( $item->order_id );
         if( $order ) {
-            return '<a href="' . $order->get_edit_order_url() . '">#' . $item->order_id . ' ' . $order->get_billing_first_name() . '</a>';
+            return '<a href="' . esc_url($order->get_edit_order_url()) . '">#' . esc_html($item->order_id) . ' ' . esc_html($order->get_billing_first_name()) . '</a>';
         }
-        return '#' . $item->order_id;
+        return '#' . esc_html($item->order_id);
     }
 
     public function column_type_slug( $item ) {
         // Map slug to Label if possible (requires config manager)
-        return ucfirst( $item->type_slug );
+        return esc_html(ucfirst( $item->type_slug ));
     }
 
     public function column_status( $item ) {
@@ -103,11 +103,11 @@ class Claim_Desk_List_Table extends WP_List_Table {
         if($status == 'approved') $color = 'green';
         if($status == 'rejected') $color = 'red';
 
-        return sprintf( '<span style="color:%s; font-weight:bold;">%s</span>', $color, ucfirst( $status ) );
+        return sprintf( '<span style="color:%s; font-weight:bold;">%s</span>', esc_attr($color), esc_html(ucfirst( $status )) );
     }
 
     public function column_created_at( $item ) {
-        return $item->created_at;
+        return esc_html($item->created_at);
     }
 
     public function column_action( $item ) {
@@ -120,7 +120,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
             'id' => $item->id
         ), admin_url( 'admin.php' ) );
 
-        return sprintf( '<a href="%s" class="button">%s</a>', $url, $msg );
+        return sprintf( '<a href="%s" class="button">%s</a>', esc_url($url), esc_html($msg) );
     }
 
     public function get_bulk_actions() {
