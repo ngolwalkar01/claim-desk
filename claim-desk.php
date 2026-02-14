@@ -30,7 +30,7 @@ if ( ! defined( 'WPINC' ) ) {
 /**
  * Currently plugin version.
  */
-define( 'CLAIM_DESK_VERSION', '1.0.8' );
+define( 'CLAIM_DESK_VERSION', '1.0.0' );
 
 /**
  * The code that runs during plugin activation.
