@@ -76,7 +76,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
     }
 
     protected function column_default( $item, $column_name ) {
-        return isset( $item->$column_name ) ? $item->$column_name : print_r( $item, true );
+        return isset( $item->$column_name ) ? $item->$column_name : '';
     }
 
     public function column_id( $item ) {

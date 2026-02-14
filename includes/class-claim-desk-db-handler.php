@@ -97,8 +97,7 @@ class Claim_Desk_DB_Handler {
     public function get_claimed_items_by_order( $order_id ) {
         global $wpdb;
         
-        // Log inputs
-        error_log( "Claim Desk Debug: get_claimed_items_by_order Order ID: " . $order_id );
+
 
         $sql = "SELECT i.order_item_id, i.qty_claimed, c.status
                 FROM {$this->table_items} i
@@ -107,25 +106,18 @@ class Claim_Desk_DB_Handler {
                 AND c.status != 'rejected'"; 
         
         $query = $wpdb->prepare( $sql, $order_id );
-        error_log( "Claim Desk Debug: SQL Query: " . $query );
 
         $results = $wpdb->get_results( $query );
         
         if ( empty( $results ) ) {
-            error_log( "Claim Desk Debug: No claimed items found for Order ID " . $order_id );
             // Check if ANY claims exist for this order
             $check_claims = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table_claims} WHERE order_id = %d", $order_id ) );
             if ( ! empty( $check_claims ) ) {
-                 error_log( "Claim Desk Debug: Claims found in cd_claims table: " . print_r( $check_claims, true ) );
                  // Check items for first claim
                  $first_claim_id = $check_claims[0]->id;
                  $check_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table_items} WHERE claim_id = %d", $first_claim_id ) );
-                 error_log( "Claim Desk Debug: Items for Claim #$first_claim_id: " . print_r( $check_items, true ) );
             } else {
-                 error_log( "Claim Desk Debug: No claims found in cd_claims table either." );
             }
-        } else {
-            error_log( "Claim Desk Debug: Claimed items found: " . print_r( $results, true ) );
         }
 
         return $results;
