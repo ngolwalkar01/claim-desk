@@ -43,10 +43,10 @@ class Claim_Desk_DB_Handler {
         
         // We need 100% strict column mapping for $wpdb->insert
         $insert_data = array(
-            'order_id'   => $args['order_id'],
-            'user_id'    => $args['user_id'],
-            'type_slug'  => $args['type_slug'],
-            'status'     => $args['status'],
+            'order_id'   => absint( $args['order_id'] ),
+            'user_id'    => absint( $args['user_id'] ),
+            'type_slug'  => sanitize_text_field( $args['type_slug'] ),
+            'status'     => sanitize_key( $args['status'] ),
             'created_at' => $args['created_at'],
             'updated_at' => $args['updated_at']
         );
