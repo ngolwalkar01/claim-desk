@@ -70,6 +70,22 @@ class Claim_Desk_Activator {
 		) $charset_collate;";
 
 		dbDelta( $sql_items );
+
+		// 3. Claim Attachments Table
+		$table_attachments = $wpdb->prefix . 'cd_claim_attachments';
+		$sql_attachments = "CREATE TABLE $table_attachments (
+			id bigint(20) NOT NULL AUTO_INCREMENT,
+			claim_id bigint(20) NOT NULL,
+			file_path varchar(255) NOT NULL,
+			file_name varchar(255) NOT NULL,
+			file_type varchar(100) NOT NULL,
+			file_size bigint(20) NOT NULL,
+			uploaded_at datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY claim_id (claim_id)
+		) $charset_collate;";
+
+		dbDelta( $sql_attachments );
 	}
 
 }

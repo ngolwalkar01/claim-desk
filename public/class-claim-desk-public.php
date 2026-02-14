@@ -176,6 +176,89 @@ class Claim_Desk_Public {
             ));
         }
 
+        // 3. Handle File Uploads
+        if ( ! empty( $_FILES['files'] ) ) {
+            require_once( ABSPATH . 'wp-admin/includes/file.php' );
+
+            $files = $_FILES['files'];
+            $file_count = count( $files['name'] );
+
+            // Limit to 5 files
+            if ( $file_count > 5 ) {
+                wp_send_json_error( __( 'Maximum 5 files allowed.', 'claim-desk' ) );
+            }
+
+            // Allowed file types
+            $allowed_types = array( 'jpg', 'jpeg', 'png', 'gif', 'webp' );
+            $allowed_mimes = array(
+                'image/jpeg',
+                'image/jpg',
+                'image/png',
+                'image/gif',
+                'image/webp'
+            );
+
+            for ( $i = 0; $i < $file_count; $i++ ) {
+                // Skip empty files
+                if ( empty( $files['name'][$i] ) ) {
+                    continue;
+                }
+
+                // Check file size (2MB max)
+                if ( $files['size'][$i] > 2097152 ) {
+                    wp_send_json_error( __( 'File size must not exceed 2MB.', 'claim-desk' ) );
+                }
+
+                // Prepare file array for wp_handle_upload
+                $file = array(
+                    'name'     => $files['name'][$i],
+                    'type'     => $files['type'][$i],
+                    'tmp_name' => $files['tmp_name'][$i],
+                    'error'    => $files['error'][$i],
+                    'size'     => $files['size'][$i]
+                );
+
+                // Validate file type and extension
+                $filetype = wp_check_filetype_and_ext( $file['tmp_name'], $file['name'] );
+                $ext = $filetype['ext'];
+                $type = $filetype['type'];
+
+                // Check if extension and MIME type are allowed
+                if ( ! in_array( $ext, $allowed_types ) || ! in_array( $type, $allowed_mimes ) ) {
+                    wp_send_json_error( __( 'Invalid file type. Only JPG, PNG, GIF, and WEBP images are allowed.', 'claim-desk' ) );
+                }
+
+                // Upload file
+                $upload_overrides = array(
+                    'test_form' => false,
+                    'mimes'     => array(
+                        'jpg|jpeg|jpe' => 'image/jpeg',
+                        'png'          => 'image/png',
+                        'gif'          => 'image/gif',
+                        'webp'         => 'image/webp'
+                    )
+                );
+
+                $uploaded_file = wp_handle_upload( $file, $upload_overrides );
+
+                if ( isset( $uploaded_file['error'] ) ) {
+                    wp_send_json_error( $uploaded_file['error'] );
+                }
+
+                // Save attachment metadata to database
+                $upload_dir = wp_upload_dir();
+                $relative_path = str_replace( $upload_dir['basedir'], '', $uploaded_file['file'] );
+
+                $db->save_attachment( array(
+                    'claim_id'  => $claim_id,
+                    'file_path' => $relative_path,
+                    'file_name' => basename( $uploaded_file['file'] ),
+                    'file_type' => $uploaded_file['type'],
+                    'file_size' => filesize( $uploaded_file['file'] )
+                ));
+            }
+        }
+
         wp_send_json_success( array(
             'message' => __( 'Claim submitted successfully!', 'claim-desk' ),
             'claim_id' => $claim_id

@@ -369,30 +369,44 @@
                 itemsPayload[id] = data.qty;
             });
 
-            const data = {
-                action: 'claim_desk_submit_claim',
-                nonce: claim_desk_public.nonce,
-                order_id: this.orderId,
-                scope: this.claimType, // Using claim type as scope for now
-                items: JSON.stringify(itemsPayload),
-                form_data: JSON.stringify(formData)
-            };
 
-            $.post(claim_desk_public.ajax_url, data, function (res) {
-                if (res.success) {
-                    $('#generatedClaimId').text('#' + res.data.claim_id);
-                    $('.cd-wizard-container .step-content').removeClass('active');
-                    $('#successScreen').addClass('active');
-                    // Hide stepper
-                    $('.progress-stepper').hide();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    alert(res.data);
+            // Create FormData for multipart upload
+            const formDataObj = new FormData();
+            formDataObj.append('action', 'claim_desk_submit_claim');
+            formDataObj.append('nonce', claim_desk_public.nonce);
+            formDataObj.append('order_id', this.orderId);
+            formDataObj.append('scope', this.claimType);
+            formDataObj.append('items', JSON.stringify(itemsPayload));
+            formDataObj.append('form_data', JSON.stringify(formData));
+
+            // Append files
+            this.uploadedFiles.forEach((file, index) => {
+                formDataObj.append('files[]', file);
+            });
+
+            $.ajax({
+                url: claim_desk_public.ajax_url,
+                type: 'POST',
+                data: formDataObj,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.success) {
+                        $('#generatedClaimId').text('#' + res.data.claim_id);
+                        $('.cd-wizard-container .step-content').removeClass('active');
+                        $('#successScreen').addClass('active');
+                        // Hide stepper
+                        $('.progress-stepper').hide();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else {
+                        alert(res.data);
+                        $btn.prop('disabled', false).text('Submit Claim');
+                    }
+                },
+                error: function () {
+                    alert('Server Error');
                     $btn.prop('disabled', false).text('Submit Claim');
                 }
-            }).fail(function () {
-                alert('Server Error');
-                $btn.prop('disabled', false).text('Submit Claim');
             });
         },
 

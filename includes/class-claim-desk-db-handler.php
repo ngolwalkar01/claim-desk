@@ -15,11 +15,13 @@ class Claim_Desk_DB_Handler {
      */
     private $table_claims;
     private $table_items;
+    private $table_attachments;
 
     public function __construct() {
         global $wpdb;
         $this->table_claims = $wpdb->prefix . 'cd_claims';
         $this->table_items = $wpdb->prefix . 'cd_claim_items';
+        $this->table_attachments = $wpdb->prefix . 'cd_claim_attachments';
     }
 
     /**
@@ -121,6 +123,49 @@ class Claim_Desk_DB_Handler {
         }
 
         return $results;
+    }
+
+    /**
+     * Save file attachment metadata.
+     * 
+     * @param array $data Attachment data (claim_id, file_path, file_name, file_type, file_size)
+     * @return int|false Attachment ID or false on failure.
+     */
+    public function save_attachment( $data ) {
+        global $wpdb;
+
+        $insert_data = array(
+            'claim_id'  => absint( $data['claim_id'] ),
+            'file_path' => sanitize_text_field( $data['file_path'] ),
+            'file_name' => sanitize_text_field( $data['file_name'] ),
+            'file_type' => sanitize_text_field( $data['file_type'] ),
+            'file_size' => absint( $data['file_size'] ),
+        );
+
+        $result = $wpdb->insert( $this->table_attachments, $insert_data );
+
+        if ( $result ) {
+            return $wpdb->insert_id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get all attachments for a claim.
+     * 
+     * @param int $claim_id Claim ID
+     * @return array List of attachment objects
+     */
+    public function get_claim_attachments( $claim_id ) {
+        global $wpdb;
+
+        $query = $wpdb->prepare(
+            "SELECT * FROM {$this->table_attachments} WHERE claim_id = %d ORDER BY uploaded_at ASC",
+            $claim_id
+        );
+
+        return $wpdb->get_results( $query );
     }
 
 }
