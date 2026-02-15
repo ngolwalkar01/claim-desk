@@ -216,6 +216,10 @@
                 $('#fileInput').click();
             });
 
+            $('#fileInput').on('click', function (e) {
+                e.stopPropagation();
+            });
+
             $('#fileInput').on('change', function (e) {
                 self.handleFiles(e.target.files);
             });
