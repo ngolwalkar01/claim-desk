@@ -23,16 +23,81 @@
                 document.getElementById('cd-total-idx').textContent = this.attachments.length;
             }
 
+            // Attach click handlers to gallery thumbnails using event delegation
+            $(document).on('click', '.cd-gallery-thumb', (e) => {
+                const idx = parseInt($(e.currentTarget).attr('data-idx'));
+                if (!isNaN(idx)) {
+                    this.open(idx);
+                }
+            });
+
+            // Close button handler
+            $(document).on('click', '.cd-lightbox-close', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.close();
+            });
+
+            // Zoom in button
+            $(document).on('click', '.cd-zoom-in', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.zoomIn();
+            });
+
+            // Zoom out button
+            $(document).on('click', '.cd-zoom-out', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.zoomOut();
+            });
+
+            // Reset zoom button
+            $(document).on('click', '.cd-reset-zoom', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.resetZoom();
+            });
+
+            // Navigation prev button
+            $(document).on('click', '.cd-nav-prev', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.prev();
+            });
+
+            // Navigation next button
+            $(document).on('click', '.cd-nav-next', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.next();
+            });
+
             // Keyboard shortcuts
             $(document).on('keydown', (e) => {
                 const modal = document.getElementById('cd-lightbox-modal');
-                if (!modal.classList.contains('active')) return;
+                if (!modal || !modal.classList.contains('active')) return;
 
-                if (e.key === 'ArrowLeft') this.prev();
-                if (e.key === 'ArrowRight') this.next();
-                if (e.key === 'Escape') this.close();
-                if (e.key === '+' || e.key === '=') this.zoomIn();
-                if (e.key === '-') this.zoomOut();
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    this.prev();
+                }
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    this.next();
+                }
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    this.close();
+                }
+                if (e.key === '+' || e.key === '=') {
+                    e.preventDefault();
+                    this.zoomIn();
+                }
+                if (e.key === '-') {
+                    e.preventDefault();
+                    this.zoomOut();
+                }
             });
 
             // Close on outside click

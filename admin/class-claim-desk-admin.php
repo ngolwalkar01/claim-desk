@@ -224,7 +224,7 @@ class Claim_Desk_Admin {
                     foreach ($attachments as $idx => $attachment) {
                         $file_url = wp_upload_dir()['baseurl'] . $attachment->file_path;
                         $file_size_kb = round($attachment->file_size / 1024, 2);
-                        echo '<div class="cd-gallery-thumb" data-idx="' . esc_attr($idx) . '" onclick="ClaimDeskLightbox.open(' . esc_attr($idx) . ')">';
+                        echo '<div class="cd-gallery-thumb" data-idx="' . esc_attr($idx) . '">';
                         echo '<img src="' . esc_url($file_url) . '" alt="' . esc_attr($attachment->file_name) . '" />';
                         echo '<div class="cd-thumb-info">';
                         echo '<span class="cd-filename">' . esc_html($attachment->file_name) . '</span>';
@@ -281,7 +281,7 @@ class Claim_Desk_Admin {
         <!-- Lightbox Modal -->
         <div id="cd-lightbox-modal" class="cd-lightbox-modal">
             <div class="cd-lightbox-container">
-                <button class="cd-lightbox-close" onclick="ClaimDeskLightbox.close()">&times;</button>
+                <button class="cd-lightbox-close">&times;</button>
                 
                 <div class="cd-lightbox-header">
                     <div class="cd-lightbox-info">
@@ -289,19 +289,19 @@ class Claim_Desk_Admin {
                         <span class="cd-image-name" id="cd-image-name">Image</span>
                     </div>
                     <div class="cd-lightbox-controls">
-                        <button class="cd-zoom-btn" onclick="ClaimDeskLightbox.zoomOut()" title="Zoom Out">−</button>
+                        <button class="cd-zoom-btn cd-zoom-out" title="Zoom Out">−</button>
                         <span class="cd-zoom-level" id="cd-zoom-level">100%</span>
-                        <button class="cd-zoom-btn" onclick="ClaimDeskLightbox.zoomIn()" title="Zoom In">+</button>
-                        <button class="cd-reset-btn" onclick="ClaimDeskLightbox.resetZoom()" title="Reset">Reset</button>
+                        <button class="cd-zoom-btn cd-zoom-in" title="Zoom In">+</button>
+                        <button class="cd-reset-btn cd-reset-zoom" title="Reset">Reset</button>
                     </div>
                 </div>
 
                 <div class="cd-lightbox-body">
-                    <button class="cd-nav-btn cd-nav-prev" onclick="ClaimDeskLightbox.prev()" title="Previous">‹</button>
+                    <button class="cd-nav-btn cd-nav-prev" title="Previous">‹</button>
                     <div class="cd-lightbox-image-container">
                         <img id="cd-lightbox-image" class="cd-lightbox-image" src="" alt="Claim Image" />
                     </div>
-                    <button class="cd-nav-btn cd-nav-next" onclick="ClaimDeskLightbox.next()" title="Next">›</button>
+                    <button class="cd-nav-btn cd-nav-next" title="Next">›</button>
                 </div>
 
                 <div class="cd-lightbox-footer">
