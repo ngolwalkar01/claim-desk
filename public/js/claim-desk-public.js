@@ -248,6 +248,28 @@
             $('#confirmCheckbox').on('change', function () {
                 $('#submitBtn').prop('disabled', !$(this).is(':checked'));
             });
+
+            // File Remove with Event Delegation (works for dynamically created elements)
+            $(document).on('click', '.file-remove', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const $fileItem = $(this).closest('.file-item');
+                const idx = parseInt($(this).attr('data-idx'));
+
+                // Remove file from uploadedFiles array
+                if (!isNaN(idx) && idx >= 0 && idx < self.uploadedFiles.length) {
+                    self.uploadedFiles.splice(idx, 1);
+                }
+
+                // Remove from DOM
+                $fileItem.remove();
+
+                // Re-index remaining file items to keep data-idx in sync
+                $('#filePreview .file-remove').each(function (i) {
+                    $(this).attr('data-idx', i);
+                });
+            });
         },
 
         // ...
@@ -320,11 +342,6 @@
                     : `${rejectedFiles.length} files exceed the 2MB limit: ${rejectedFiles.join(', ')}`;
                 $errorMsg.text(errorText).show();
             }
-
-            // Re-bind remove
-            $('.file-remove').off('click').on('click', function () {
-                $(this).parent().remove();
-            });
         },
 
         updateSummary: function () {
