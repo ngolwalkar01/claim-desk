@@ -114,13 +114,14 @@ if ( ! $order_id ) {
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label"><?php _e('Upload Images/Videos', 'claim-desk'); ?></label>
+                    <label class="form-label"><?php _e('Upload Images', 'claim-desk'); ?></label>
                     <div class="file-upload-area" id="fileUploadArea">
                         <div class="upload-icon">📁</div>
                         <div class="upload-text"><?php _e('Drag & drop files here or click to browse', 'claim-desk'); ?></div>
-                        <div class="upload-hint"><?php _e('Supports: JPG, PNG, MP4 (Max 10MB per file)', 'claim-desk'); ?></div>
-                        <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display: none;">
+                        <div class="upload-hint"><?php _e('Supports: JPG, PNG, GIF (Max 2MB per file)', 'claim-desk'); ?></div>
+                        <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
                     </div>
+                    <div class="error-message" id="fileUploadError" style="display: none;"></div>
                     <div class="file-preview" id="filePreview"></div>
                 </div>
 

@@ -275,12 +275,28 @@
         handleFiles: function (files) {
             const self = this;
             const $preview = $('#filePreview');
+            const $errorMsg = $('#fileUploadError');
+            const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+            const rejectedFiles = [];
+
+            // Clear previous error messages
+            $errorMsg.hide().empty();
 
             Array.from(files).forEach(file => {
+                // Check max 5 files limit
                 if (self.uploadedFiles.length >= 5) {
-                    alert('Max 5 files');
+                    $errorMsg.text('Maximum 5 files allowed.').show();
                     return;
                 }
+
+                // Check file size (2MB limit)
+                if (file.size > maxSize) {
+                    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                    rejectedFiles.push(`${file.name} (${fileSizeMB}MB)`);
+                    return; // Skip this file
+                }
+
+                // File is valid, add it
                 self.uploadedFiles.push(file);
 
                 const reader = new FileReader();
@@ -296,6 +312,14 @@
                 };
                 reader.readAsDataURL(file);
             });
+
+            // Show error message for rejected files
+            if (rejectedFiles.length > 0) {
+                const errorText = rejectedFiles.length === 1
+                    ? `File ${rejectedFiles[0]} exceeds the 2MB limit and was not added.`
+                    : `${rejectedFiles.length} files exceed the 2MB limit: ${rejectedFiles.join(', ')}`;
+                $errorMsg.text(errorText).show();
+            }
 
             // Re-bind remove
             $('.file-remove').off('click').on('click', function () {
