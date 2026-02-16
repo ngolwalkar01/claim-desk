@@ -1,8 +1,6 @@
 (function ($) {
     'use strict';
 
-    console.log('ClaimDesk script loaded - IIFE starting');
-
     const ClaimDeskWizard = {
         orderId: 0,
         currentStep: 1,
@@ -12,9 +10,7 @@
 
         init: function () {
             // Check if wizard exists
-            console.log('ClaimDeskWizard: init() called');
             if ($('.cd-wizard-container').length === 0) {
-                console.log('ClaimDeskWizard: wizard container not found');
                 return;
             }
 
@@ -23,13 +19,10 @@
             this.orderId = urlParams.get('order_id');
 
             if (!this.orderId) {
-                console.log('ClaimDeskWizard: no order_id in URL');
                 return;
             }
 
-            console.log('ClaimDeskWizard: initializing with orderId:', this.orderId);
             this.bindEvents();
-            console.log('ClaimDeskWizard: events bound');
             this.renderConfig();
             this.fetchItems();
         },
@@ -219,24 +212,15 @@
             });
 
             // File Upload
-            const $fileUploadArea = $('#fileUploadArea');
-            const $fileInput = $('#fileInput');
-            
-            console.log('Binding file upload events');
-            console.log('File upload area found:', $fileUploadArea.length > 0, 'Element:', $fileUploadArea);
-            console.log('File input found:', $fileInput.length > 0, 'Element:', $fileInput);
-            
-            $fileUploadArea.on('click', function () {
-                console.log('fileUploadArea clicked');
-                $fileInput.click();
+            $('#fileUploadArea').on('click', function () {
+                $('#fileInput').click();
             });
 
-            $fileInput.on('click', function (e) {
+            $('#fileInput').on('click', function (e) {
                 e.stopPropagation();
             });
 
-            $fileInput.on('change', function (e) {
-                console.log('fileInput changed');
+            $('#fileInput').on('change', function (e) {
                 self.handleFiles(e.target.files);
             });
 
@@ -245,14 +229,12 @@
             $dropArea.on('dragover', function (e) {
                 e.preventDefault();
                 $(this).addClass('dragover');
-                console.log('dragover event');
             });
             $dropArea.on('dragleave drop', function (e) {
                 e.preventDefault();
                 $(this).removeClass('dragover');
             });
             $dropArea.on('drop', function (e) {
-                console.log('drop event');
                 const files = e.originalEvent.dataTransfer.files;
                 self.handleFiles(files);
             });
@@ -297,17 +279,10 @@
             const maxSize = 2 * 1024 * 1024; // 2MB in bytes
             const rejectedFiles = [];
 
-            alert('File upload handler called! Files: ' + files.length);
-            console.log('ClaimDeskWizard: handleFiles() called, Files:', files.length);
-            console.log('fileUploadError element:', $errorMsg);
-            console.log('fileUploadError visible in DOM:', $errorMsg.length > 0);
-
             // Clear previous error messages
             $errorMsg.hide().empty();
 
             Array.from(files).forEach(file => {
-                console.log('Processing file:', file.name, 'Size:', file.size, 'bytes');
-                
                 // Check max 5 files limit
                 if (self.uploadedFiles.length >= 5) {
                     $errorMsg.text('Maximum 5 files allowed.').show();
@@ -317,14 +292,12 @@
                 // Check file size (2MB limit)
                 if (file.size > maxSize) {
                     const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                    console.log('File rejected - exceeds 2MB:', file.name, fileSizeMB + 'MB');
                     rejectedFiles.push(`${file.name} (${fileSizeMB}MB)`);
                     return; // Skip this file
                 }
 
                 // File is valid, add it
                 self.uploadedFiles.push(file);
-                console.log('File accepted:', file.name);
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -345,9 +318,7 @@
                 const errorText = rejectedFiles.length === 1
                     ? `File ${rejectedFiles[0]} exceeds the 2MB limit and was not added.`
                     : `${rejectedFiles.length} files exceed the 2MB limit: ${rejectedFiles.join(', ')}`;
-                console.log('Showing error:', errorText);
                 $errorMsg.text(errorText).show();
-                alert('Error: ' + errorText);
             }
 
             // Re-bind remove
@@ -499,8 +470,6 @@
     };
 
     $(document).ready(function () {
-        console.log('ClaimDeskWizard: Document ready');
-        console.log('Wizard container found:', $('.cd-wizard-container').length > 0);
         ClaimDeskWizard.init();
     });
 
