@@ -13,32 +13,19 @@
         zoomStep: 25,
 
         init: function () {
-            console.log('ClaimDeskLightbox.init() called');
             const dataElement = document.getElementById('cd-attachments-data');
-            console.log('Attachments data element:', dataElement);
-            
             if (dataElement) {
-                try {
-                    this.attachments = JSON.parse(dataElement.textContent);
-                    console.log('Parsed attachments:', this.attachments);
-                } catch (e) {
-                    console.error('Error parsing attachments JSON:', e);
-                }
-            } else {
-                console.log('No attachments data element found - probably no images on this page');
+                this.attachments = JSON.parse(dataElement.textContent);
             }
 
             // Update total count
             if (this.attachments.length > 0) {
                 document.getElementById('cd-total-idx').textContent = this.attachments.length;
-                console.log('Updated total count to:', this.attachments.length);
             }
 
             // Attach click handlers to gallery thumbnails using event delegation
             $(document).on('click', '.cd-gallery-thumb', (e) => {
-                console.log('Gallery thumb clicked:', e.currentTarget);
                 const idx = parseInt($(e.currentTarget).attr('data-idx'));
-                console.log('Image index:', idx);
                 if (!isNaN(idx)) {
                     this.open(idx);
                 }
@@ -46,7 +33,6 @@
 
             // Close button handler
             $(document).on('click', '.cd-lightbox-close', (e) => {
-                console.log('Close button clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 this.close();
@@ -54,7 +40,6 @@
 
             // Zoom in button
             $(document).on('click', '.cd-zoom-in', (e) => {
-                console.log('Zoom in clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 this.zoomIn();
@@ -62,7 +47,6 @@
 
             // Zoom out button
             $(document).on('click', '.cd-zoom-out', (e) => {
-                console.log('Zoom out clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 this.zoomOut();
@@ -70,7 +54,6 @@
 
             // Reset zoom button
             $(document).on('click', '.cd-reset-zoom', (e) => {
-                console.log('Reset zoom clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 this.resetZoom();
@@ -78,7 +61,6 @@
 
             // Navigation prev button
             $(document).on('click', '.cd-nav-prev', (e) => {
-                console.log('Prev button clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 this.prev();
@@ -86,7 +68,6 @@
 
             // Navigation next button
             $(document).on('click', '.cd-nav-next', (e) => {
-                console.log('Next button clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 this.next();
@@ -125,38 +106,23 @@
                     this.close();
                 }
             });
-            
-            console.log('ClaimDeskLightbox event handlers initialized');
         },
 
         open: function (index) {
-            console.log('open() called with index:', index);
-            console.log('attachments available:', this.attachments);
-            
-            if (!this.attachments || this.attachments.length === 0) {
-                console.log('No attachments available, returning');
-                return;
-            }
+            if (!this.attachments || this.attachments.length === 0) return;
 
             this.currentIndex = index;
             this.currentZoom = 100;
             this.displayImage();
 
             const modal = document.getElementById('cd-lightbox-modal');
-            console.log('Modal element:', modal);
-            
             if (modal) {
                 modal.classList.add('active');
-                console.log('Added active class to modal');
-                console.log('Modal classList:', modal.classList);
                 document.body.style.overflow = 'hidden';
-            } else {
-                console.error('Modal element not found!');
             }
         },
 
         close: function () {
-            console.log('close() called');
             const modal = document.getElementById('cd-lightbox-modal');
             if (modal) {
                 modal.classList.remove('active');
@@ -165,14 +131,8 @@
         },
 
         displayImage: function () {
-            console.log('displayImage() called for index:', this.currentIndex);
             const attachment = this.attachments[this.currentIndex];
-            console.log('Current attachment:', attachment);
-            
-            if (!attachment) {
-                console.error('Attachment not found at index:', this.currentIndex);
-                return;
-            }
+            if (!attachment) return;
 
             const img = document.getElementById('cd-lightbox-image');
             const nameEl = document.getElementById('cd-image-name');
@@ -263,11 +223,8 @@
      * Claim Desk Admin Logic
      */
     $(document).ready(function () {
-        console.log('Admin JS Document Ready');
         // Initialize lightbox
-        console.log('About to call ClaimDeskLightbox.init()');
         ClaimDeskLightbox.init();
-        console.log('ClaimDeskLightbox.init() completed');
 
         if ($('.claim-desk-config-wrapper').length) {
             initConfigPage();
