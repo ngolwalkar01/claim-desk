@@ -161,7 +161,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                 $wpdb->delete( $table_claims, array( 'id' => $id ) );
             }
-            echo '<div class="updated"><p>' . __( 'Claims deleted.', 'claim-desk' ) . '</p></div>';
+            echo '<div class="updated"><p>' . esc_html__( 'Claims deleted.', 'claim-desk' ) . '</p></div>';
         }
 
         if ( 'reject' === $action ) {
@@ -169,7 +169,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                 $wpdb->update( $table_claims, array( 'status' => 'rejected' ), array( 'id' => $id ) );
             }
-            echo '<div class="updated"><p>' . __( 'Claims rejected.', 'claim-desk' ) . '</p></div>';
+            echo '<div class="updated"><p>' . esc_html__( 'Claims rejected.', 'claim-desk' ) . '</p></div>';
         }
 
         if ( 'approve' === $action ) {
@@ -177,7 +177,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                 $wpdb->update( $table_claims, array( 'status' => 'approved' ), array( 'id' => $id ) );
             }
-            echo '<div class="updated"><p>' . __( 'Claims approved.', 'claim-desk' ) . '</p></div>';
+            echo '<div class="updated"><p>' . esc_html__( 'Claims approved.', 'claim-desk' ) . '</p></div>';
         }
     }
 
