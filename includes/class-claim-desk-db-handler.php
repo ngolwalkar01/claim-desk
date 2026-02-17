@@ -53,6 +53,16 @@ class Claim_Desk_DB_Handler {
             'updated_at' => $args['updated_at']
         );
 
+        $insert_data = array(
+            'order_id'   => absint( $args['order_id'] ),
+            'user_id'    => absint( $args['user_id'] ),
+            'type_slug'  => sanitize_text_field( $args['type_slug'] ),
+            'status'     => sanitize_key( $args['status'] ),
+            'created_at' => $args['created_at'],
+            'updated_at' => $args['updated_at']
+        );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $result = $wpdb->insert( $this->table_claims, $insert_data );
 
         if ( $result ) {
@@ -81,6 +91,17 @@ class Claim_Desk_DB_Handler {
             'dynamic_data'  => isset($data['dynamic_data']) ? $data['dynamic_data'] : null // JSON string
         );
 
+        $insert_data = array(
+            'claim_id'      => $data['claim_id'],
+            'order_item_id' => $data['order_item_id'],
+            'product_id'    => $data['product_id'],
+            'qty_total'     => $data['qty_total'],
+            'qty_claimed'   => $data['qty_claimed'],
+            'reason_slug'   => $data['reason_slug'],
+            'dynamic_data'  => isset($data['dynamic_data']) ? $data['dynamic_data'] : null // JSON string
+        );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $result = $wpdb->insert( $this->table_items, $insert_data );
 
         if ( $result ) {
@@ -109,16 +130,19 @@ class Claim_Desk_DB_Handler {
         
         $query = $wpdb->prepare( $sql, $order_id );
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $results = $wpdb->get_results( $query );
         
         if ( empty( $results ) ) {
             // Check if ANY claims exist for this order
             $query_claims = "SELECT * FROM " . $this->table_claims . " WHERE order_id = %d";
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
             $check_claims = $wpdb->get_results( $wpdb->prepare( $query_claims, $order_id ) );
             if ( ! empty( $check_claims ) ) {
                  // Check items for first claim
                  $first_claim_id = $check_claims[0]->id;
                  $query_items = "SELECT * FROM " . $this->table_items . " WHERE claim_id = %d";
+                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                  $check_items = $wpdb->get_results( $wpdb->prepare( $query_items, $first_claim_id ) );
             } else {
             }
@@ -144,6 +168,7 @@ class Claim_Desk_DB_Handler {
             'file_size' => absint( $data['file_size'] ),
         );
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $result = $wpdb->insert( $this->table_attachments, $insert_data );
 
         if ( $result ) {
@@ -165,6 +190,7 @@ class Claim_Desk_DB_Handler {
         $sql = "SELECT * FROM " . $this->table_attachments . " WHERE claim_id = %d ORDER BY uploaded_at ASC";
         $query = $wpdb->prepare( $sql, $claim_id );
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         return $wpdb->get_results( $query );
     }
 
