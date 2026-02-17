@@ -163,7 +163,7 @@ class Claim_Desk_Admin {
             <h3>
                 <?php
                 /* translators: %1$d = Claim ID, %2$d = Order ID. Numbered placeholders allow translators to reorder text based on language grammar. */
-                printf( __('Claim #%1$d - Order #%2$d', 'claim-desk'), $claim->id, $claim->order_id ); 
+                printf( esc_html__( 'Claim #%1$d - Order #%2$d', 'claim-desk' ), $claim->id, $claim->order_id ); 
                 ?>
                 <span class="cd-status-badge <?php echo $claim->status; ?>"><?php echo ucfirst($claim->status); ?></span>
             </h3>
