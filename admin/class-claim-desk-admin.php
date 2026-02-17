@@ -664,7 +664,7 @@ class Claim_Desk_Admin {
             'msg'    => 'updated'
         ), admin_url( 'admin.php' ) );
 
-        wp_redirect( $redirect_url );
+        wp_safe_redirect( $redirect_url );
         exit;
     }
 
