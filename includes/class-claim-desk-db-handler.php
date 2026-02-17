@@ -113,11 +113,13 @@ class Claim_Desk_DB_Handler {
         
         if ( empty( $results ) ) {
             // Check if ANY claims exist for this order
-            $check_claims = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table_claims} WHERE order_id = %d", $order_id ) );
+            $query_claims = "SELECT * FROM {$this->table_claims} WHERE order_id = %d";
+            $check_claims = $wpdb->get_results( $wpdb->prepare( $query_claims, $order_id ) );
             if ( ! empty( $check_claims ) ) {
                  // Check items for first claim
                  $first_claim_id = $check_claims[0]->id;
-                 $check_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table_items} WHERE claim_id = %d", $first_claim_id ) );
+                 $query_items = "SELECT * FROM {$this->table_items} WHERE claim_id = %d";
+                 $check_items = $wpdb->get_results( $wpdb->prepare( $query_items, $first_claim_id ) );
             } else {
             }
         }
@@ -160,10 +162,8 @@ class Claim_Desk_DB_Handler {
     public function get_claim_attachments( $claim_id ) {
         global $wpdb;
 
-        $query = $wpdb->prepare(
-            "SELECT * FROM {$this->table_attachments} WHERE claim_id = %d ORDER BY uploaded_at ASC",
-            $claim_id
-        );
+        $sql = "SELECT * FROM {$this->table_attachments} WHERE claim_id = %d ORDER BY uploaded_at ASC";
+        $query = $wpdb->prepare( $sql, $claim_id );
 
         return $wpdb->get_results( $query );
     }
