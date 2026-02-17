@@ -3,7 +3,8 @@
  * Frontend Wizard HTML
  */
 
-$order_id = isset( $_GET['order_id'] ) ? intval( $_GET['order_id'] ) : 0;
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$order_id = isset( $_GET['order_id'] ) ? intval( wp_unslash( $_GET['order_id'] ) ) : 0;
 // Basic validation
 if ( ! $order_id ) {
     echo '<div class="container"><p>Invalid Order ID.</p></div>';
