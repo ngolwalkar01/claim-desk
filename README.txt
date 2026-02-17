@@ -1,4 +1,4 @@
-=== ClaimDesk – WooCommerce Return & Exchange Claim Manager ===
+=== ClaimDesk – Return & Exchange Claim Manager ===
 Contributors: prozoned
 Tags: woocommerce, return, exchange, refund, claim management
 Requires at least: 5.0

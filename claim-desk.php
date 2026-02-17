@@ -10,7 +10,7 @@
  * @package           Claim_Desk
  *
  * @wordpress-plugin
- * Plugin Name:       ClaimDesk
+ * Plugin Name:       ClaimDesk – Return & Exchange Claim Manager
  * Plugin URI:        https://prozoned.com/claimdesk
  * Description:       Manage WooCommerce product return and exchange claims using a guided multi-step claim submission system.
  * Version:           1.0.0
