@@ -65,9 +65,11 @@ class Claim_Desk_List_Table extends WP_List_Table {
         // Query
         // Count total items
         $total_query = "SELECT COUNT(id) FROM " . $table_name;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $total_items = $wpdb->get_var( $total_query );
         
         $sql = "SELECT * FROM " . $table_name . " ORDER BY " . $orderby . " " . $order . " LIMIT %d OFFSET %d";
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $this->items = $wpdb->get_results( $wpdb->prepare( $sql, $per_page, $offset ) );
 
 
@@ -153,7 +155,9 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         if ( 'delete' === $action ) {
             foreach ( $claim_ids as $id ) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                 $wpdb->delete( $table_items, array( 'claim_id' => $id ) );
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                 $wpdb->delete( $table_claims, array( 'id' => $id ) );
             }
             echo '<div class="updated"><p>' . __( 'Claims deleted.', 'claim-desk' ) . '</p></div>';
@@ -161,6 +165,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         if ( 'reject' === $action ) {
             foreach ( $claim_ids as $id ) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                 $wpdb->update( $table_claims, array( 'status' => 'rejected' ), array( 'id' => $id ) );
             }
             echo '<div class="updated"><p>' . __( 'Claims rejected.', 'claim-desk' ) . '</p></div>';
@@ -168,6 +173,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         if ( 'approve' === $action ) {
             foreach ( $claim_ids as $id ) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                 $wpdb->update( $table_claims, array( 'status' => 'approved' ), array( 'id' => $id ) );
             }
             echo '<div class="updated"><p>' . __( 'Claims approved.', 'claim-desk' ) . '</p></div>';
