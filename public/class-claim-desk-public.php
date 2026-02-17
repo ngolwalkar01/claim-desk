@@ -93,8 +93,8 @@ class Claim_Desk_Public {
 
         $order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
         $scope    = isset( $_POST['scope'] ) ? sanitize_key( $_POST['scope'] ) : '';
-        $items    = isset( $_POST['items'] ) ? json_decode( stripslashes( $_POST['items'] ), true ) : [];
-        $form_data = isset( $_POST['form_data'] ) ? json_decode( stripslashes( $_POST['form_data'] ), true ) : [];
+        $items    = isset( $_POST['items'] ) ? json_decode( wp_unslash( $_POST['items'] ), true ) : [];
+        $form_data = isset( $_POST['form_data'] ) ? json_decode( wp_unslash( $_POST['form_data'] ), true ) : [];
 
         // 1. Validation
         if ( ! $order_id || ! $scope || empty( $items ) ) {
@@ -177,9 +177,11 @@ class Claim_Desk_Public {
         }
 
         // 3. Handle File Uploads
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
         if ( ! empty( $_FILES['files'] ) ) {
             require_once( ABSPATH . 'wp-admin/includes/file.php' );
 
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
             $files = $_FILES['files'];
             $file_count = count( $files['name'] );
 
