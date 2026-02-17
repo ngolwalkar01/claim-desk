@@ -92,7 +92,8 @@ class Claim_Desk_Admin {
      * Render the main setup page with Tabs.
      */
     public function display_plugin_setup() {
-        $active_tab = isset( $_GET['tab'] ) ? $_GET['tab'] : 'claims';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'claims';
         ?>
         <div class="wrap">
             <h1 class="wp-heading-inline"><?php esc_html_e( 'Claim Desk', 'claim-desk' ); ?></h1>
@@ -143,7 +144,7 @@ class Claim_Desk_Admin {
         $table_claims = $wpdb->prefix . 'cd_claims';
         $table_items = $wpdb->prefix . 'cd_claim_items';
 
-        $query = "SELECT * FROM " . $table_claims . " WHERE id = %d";
+        $query = 'SELECT * FROM ' . $table_claims . ' WHERE id = %d';
         $claim = $wpdb->get_row( $wpdb->prepare( $query, $claim_id ) );
         
         if( ! $claim ) {
@@ -151,7 +152,7 @@ class Claim_Desk_Admin {
             return;
         }
 
-        $query_items = "SELECT * FROM " . $table_items . " WHERE claim_id = %d";
+        $query_items = 'SELECT * FROM ' . $table_items . ' WHERE claim_id = %d';
         $items = $wpdb->get_results( $wpdb->prepare( $query_items, $claim_id ) );
         $user = get_userdata( $claim->user_id );
         
@@ -627,11 +628,13 @@ class Claim_Desk_Admin {
      * Hooked to admin_init.
      */
     public function process_status_update() {
-        if ( ! isset( $_POST['action'] ) || $_POST['action'] !== 'claim_desk_update_status' ) {
+        $action = isset( $_POST['action'] ) ? sanitize_text_field( wp_unslash( $_POST['action'] ) ) : '';
+        if ( $action !== 'claim_desk_update_status' ) {
             return;
         }
 
-        if ( ! isset( $_POST['claim_desk_nonce'] ) || ! wp_verify_nonce( $_POST['claim_desk_nonce'], 'claim_desk_action' ) ) {
+        $nonce = isset( $_POST['claim_desk_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['claim_desk_nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'claim_desk_action' ) ) {
             wp_die( 'Security check failed' );
         }
 
@@ -639,8 +642,8 @@ class Claim_Desk_Admin {
             wp_die( 'Permission denied' );
         }
 
-        $claim_id = isset( $_POST['claim_id'] ) ? intval( $_POST['claim_id'] ) : 0;
-        $status   = isset( $_POST['status'] ) ? sanitize_key( $_POST['status'] ) : '';
+        $claim_id = isset( $_POST['claim_id'] ) ? intval( wp_unslash( $_POST['claim_id'] ) ) : 0;
+        $status   = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '';
 
         if ( ! $claim_id || ! in_array( $status, array( 'approved', 'rejected' ) ) ) {
             return;
