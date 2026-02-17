@@ -50,8 +50,10 @@ class Claim_Desk_List_Table extends WP_List_Table {
         $offset = ( $current_page - 1 ) * $per_page;
 
         // Sorting
-        $orderby = isset( $_GET['orderby'] ) ? sanitize_key( $_GET['orderby'] ) : 'created_at';
-        $order   = isset( $_GET['order'] ) ? sanitize_text_field( $_GET['order'] ) : 'DESC';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $orderby = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'created_at';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $order   = isset( $_GET['order'] ) ? sanitize_text_field( wp_unslash( $_GET['order'] ) ) : 'DESC';
 
         $allowed_sort_columns = array( 'id', 'created_at', 'status' );
         if ( ! in_array( $orderby, $allowed_sort_columns ) ) {
@@ -62,8 +64,10 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         // Query
         // Count total items
-        $total_items = $wpdb->get_var( "SELECT COUNT(id) FROM `" . $table_name . "`" );
-        $sql = "SELECT * FROM `" . $table_name . "` ORDER BY `$orderby` $order LIMIT %d OFFSET %d";
+        $total_query = "SELECT COUNT(id) FROM " . $table_name;
+        $total_items = $wpdb->get_var( $total_query );
+        
+        $sql = "SELECT * FROM " . $table_name . " ORDER BY " . $orderby . " " . $order . " LIMIT %d OFFSET %d";
         $this->items = $wpdb->get_results( $wpdb->prepare( $sql, $per_page, $offset ) );
 
 
@@ -138,7 +142,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
         // Security check
         check_admin_referer( 'bulk-claims' );
 
-        $claim_ids = isset( $_REQUEST['claim'] ) ? array_map( 'intval', $_REQUEST['claim'] ) : array();
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $claim_ids = isset( $_GET['claim'] ) ? array_map( 'intval', $_GET['claim'] ) : array();
 
         if ( empty( $claim_ids ) ) return;
 
