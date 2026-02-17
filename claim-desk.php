@@ -36,7 +36,7 @@ define( 'CLAIM_DESK_VERSION', '1.0.0' );
  * The code that runs during plugin activation.
  * This action is documented in includes/class-claim-desk-activator.php
  */
-function activate_claim_desk() {
+function claim_desk_activate_plugin() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-claim-desk-activator.php';
 	Claim_Desk_Activator::activate();
 }
@@ -45,13 +45,13 @@ function activate_claim_desk() {
  * The code that runs during plugin deactivation.
  * This action is documented in includes/class-claim-desk-deactivator.php
  */
-function deactivate_claim_desk() {
+function claim_desk_deactivate_plugin() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-claim-desk-deactivator.php';
 	Claim_Desk_Deactivator::deactivate();
 }
 
-register_activation_hook( __FILE__, 'activate_claim_desk' );
-register_deactivation_hook( __FILE__, 'deactivate_claim_desk' );
+register_activation_hook( __FILE__, 'claim_desk_activate_plugin' );
+register_deactivation_hook( __FILE__, 'claim_desk_deactivate_plugin' );
 
 /**
  * Declare HPOS Compatibility.
@@ -77,10 +77,10 @@ require plugin_dir_path( __FILE__ ) . 'includes/class-claim-desk.php';
  *
  * @since    1.0.0
  */
-function run_claim_desk() {
+function claim_desk_run_plugin() {
 
 	$plugin = new Claim_Desk();
 	$plugin->run();
 
 }
-run_claim_desk();
+claim_desk_run_plugin();
