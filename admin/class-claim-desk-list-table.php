@@ -59,17 +59,18 @@ class Claim_Desk_List_Table extends WP_List_Table {
         if ( ! in_array( $orderby, $allowed_sort_columns ) ) {
             $orderby = 'created_at';
         }
-
+        
+        // Ensure $order is uppercase and valid (ASC/DESC)
         $order = ( 'ASC' === strtoupper( $order ) ) ? 'ASC' : 'DESC';
 
         // Query
         // Count total items
         $total_query = "SELECT COUNT(id) FROM " . $table_name;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
         $total_items = $wpdb->get_var( $total_query );
         
         $sql = "SELECT * FROM " . $table_name . " ORDER BY " . $orderby . " " . $order . " LIMIT %d OFFSET %d";
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $this->items = $wpdb->get_results( $wpdb->prepare( $sql, $per_page, $offset ) );
 
 
