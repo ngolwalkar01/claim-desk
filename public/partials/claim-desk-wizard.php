@@ -42,7 +42,10 @@ if ( ! $order_id ) {
     <div class="claim-card">
         <!-- Order Info Header -->
         <div class="card-header">
-            <h1 class="card-title"><?php printf( __('Claim for Order #%d', 'claim-desk'), $order_id ); ?></h1>
+            <h1 class="card-title"><?php
+            /* translators: %1$d = Order ID. Numbered placeholder allows translators to reorder text if needed. */
+            printf( __('Claim for Order #%1$d', 'claim-desk'), $order_id );
+            ?></h1>
             <p class="card-subtitle"><?php _e('Follow the steps below to submit your claim.', 'claim-desk'); ?></p>
         </div>
 
