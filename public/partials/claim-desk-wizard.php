@@ -3,6 +3,11 @@
  * Frontend Wizard HTML
  */
 
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
+
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $claim_desk_order_id = isset( $_GET['order_id'] ) ? intval( wp_unslash( $_GET['order_id'] ) ) : 0;
 // Basic validation

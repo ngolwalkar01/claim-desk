@@ -8,6 +8,11 @@
  * @subpackage Claim_Desk/public
  */
 
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
+
 class Claim_Desk_Public {
 
 	/**

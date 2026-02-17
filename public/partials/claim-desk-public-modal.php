@@ -1,4 +1,10 @@
 <!-- Claim Desk Modal -->
+<?php
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
+?>
 <div class="cd-modal-overlay">
     <div class="cd-modal">
         <div class="cd-modal-header">
