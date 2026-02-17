@@ -95,10 +95,10 @@ class Claim_Desk_Admin {
         $active_tab = isset( $_GET['tab'] ) ? $_GET['tab'] : 'claims';
         ?>
         <div class="wrap">
-            <h1 class="wp-heading-inline"><?php _e( 'Claim Desk', 'claim-desk' ); ?></h1>
+            <h1 class="wp-heading-inline"><?php esc_html_e( 'Claim Desk', 'claim-desk' ); ?></h1>
             <nav class="nav-tab-wrapper">
-                <a href="?page=claim-desk&tab=claims" class="nav-tab <?php echo $active_tab == 'claims' ? 'nav-tab-active' : ''; ?>"><?php _e( 'All Claims', 'claim-desk' ); ?></a>
-                <a href="?page=claim-desk&tab=config" class="nav-tab <?php echo $active_tab == 'config' ? 'nav-tab-active' : ''; ?>"><?php _e( 'Configuration', 'claim-desk' ); ?></a>
+                <a href="?page=claim-desk&tab=claims" class="nav-tab <?php echo $active_tab == 'claims' ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'All Claims', 'claim-desk' ); ?></a>
+                <a href="?page=claim-desk&tab=config" class="nav-tab <?php echo $active_tab == 'config' ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Configuration', 'claim-desk' ); ?></a>
             </nav>
 
             <div class="claim-desk-content" style="margin-top: 20px;">

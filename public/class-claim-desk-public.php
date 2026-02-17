@@ -376,7 +376,7 @@ class Claim_Desk_Public {
         ?>
         <p class="order-again">
             <a href="<?php echo esc_url( $claim_url ); ?>" class="button claim-desk-trigger">
-                <?php _e( 'Report Problem', 'claim-desk' ); ?>
+                <?php esc_html_e( 'Report Problem', 'claim-desk' ); ?>
             </a>
         </p>
         <?php
