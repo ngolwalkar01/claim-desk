@@ -156,7 +156,10 @@ class Claim_Desk_Admin {
         ?>
         <div class="cd-detail-view">
             <h3>
-                <?php printf( __('Claim #%d - Order #%d', 'claim-desk'), $claim->id, $claim->order_id ); ?>
+                <?php
+                /* translators: %1$d = Claim ID, %2$d = Order ID. Numbered placeholders allow translators to reorder text based on language grammar. */
+                printf( __('Claim #%1$d - Order #%2$d', 'claim-desk'), $claim->id, $claim->order_id ); 
+                ?>
                 <span class="cd-status-badge <?php echo $claim->status; ?>"><?php echo ucfirst($claim->status); ?></span>
             </h3>
             
