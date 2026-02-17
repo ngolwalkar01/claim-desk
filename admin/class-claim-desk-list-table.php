@@ -62,8 +62,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         // Query
         // Count total items
-        $total_items = $wpdb->get_var( "SELECT COUNT(id) FROM `$table_name`" );
-        $sql = "SELECT * FROM `$table_name` ORDER BY `$orderby` $order LIMIT %d OFFSET %d";
+        $total_items = $wpdb->get_var( "SELECT COUNT(id) FROM `" . $table_name . "`" );
+        $sql = "SELECT * FROM `" . $table_name . "` ORDER BY `$orderby` $order LIMIT %d OFFSET %d";
         $this->items = $wpdb->get_results( $wpdb->prepare( $sql, $per_page, $offset ) );
 
 

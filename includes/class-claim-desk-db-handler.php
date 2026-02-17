@@ -102,8 +102,8 @@ class Claim_Desk_DB_Handler {
 
 
         $sql = "SELECT i.order_item_id, i.qty_claimed, c.status
-                FROM {$this->table_items} i
-                JOIN {$this->table_claims} c ON i.claim_id = c.id
+                FROM " . $this->table_items . " i
+                JOIN " . $this->table_claims . " c ON i.claim_id = c.id
                 WHERE c.order_id = %d 
                 AND c.status != 'rejected'"; 
         
@@ -113,12 +113,12 @@ class Claim_Desk_DB_Handler {
         
         if ( empty( $results ) ) {
             // Check if ANY claims exist for this order
-            $query_claims = "SELECT * FROM {$this->table_claims} WHERE order_id = %d";
+            $query_claims = "SELECT * FROM " . $this->table_claims . " WHERE order_id = %d";
             $check_claims = $wpdb->get_results( $wpdb->prepare( $query_claims, $order_id ) );
             if ( ! empty( $check_claims ) ) {
                  // Check items for first claim
                  $first_claim_id = $check_claims[0]->id;
-                 $query_items = "SELECT * FROM {$this->table_items} WHERE claim_id = %d";
+                 $query_items = "SELECT * FROM " . $this->table_items . " WHERE claim_id = %d";
                  $check_items = $wpdb->get_results( $wpdb->prepare( $query_items, $first_claim_id ) );
             } else {
             }
@@ -162,7 +162,7 @@ class Claim_Desk_DB_Handler {
     public function get_claim_attachments( $claim_id ) {
         global $wpdb;
 
-        $sql = "SELECT * FROM {$this->table_attachments} WHERE claim_id = %d ORDER BY uploaded_at ASC";
+        $sql = "SELECT * FROM " . $this->table_attachments . " WHERE claim_id = %d ORDER BY uploaded_at ASC";
         $query = $wpdb->prepare( $sql, $claim_id );
 
         return $wpdb->get_results( $query );
