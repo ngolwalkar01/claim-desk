@@ -145,6 +145,7 @@ class Claim_Desk_Admin {
         $table_items = $wpdb->prefix . 'cd_claim_items';
 
         $query = 'SELECT * FROM ' . $table_claims . ' WHERE id = %d';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $claim = $wpdb->get_row( $wpdb->prepare( $query, $claim_id ) );
         
         if( ! $claim ) {
@@ -153,6 +154,7 @@ class Claim_Desk_Admin {
         }
 
         $query_items = 'SELECT * FROM ' . $table_items . ' WHERE claim_id = %d';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $items = $wpdb->get_results( $wpdb->prepare( $query_items, $claim_id ) );
         $user = get_userdata( $claim->user_id );
         
@@ -652,6 +654,7 @@ class Claim_Desk_Admin {
         global $wpdb;
         $table_claims = $wpdb->prefix . 'cd_claims';
         
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $wpdb->update( 
             $table_claims, 
             array( 'status' => $status, 'updated_at' => current_time( 'mysql' ) ), 
