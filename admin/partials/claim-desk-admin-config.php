@@ -1,4 +1,10 @@
 <!-- Admin Config Page -->
+<?php
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
+?>
 <div class="wrap claim-desk-config-wrapper">
     
     <div class="cd-header">
