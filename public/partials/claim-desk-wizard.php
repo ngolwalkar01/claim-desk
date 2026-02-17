@@ -4,9 +4,9 @@
  */
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-$order_id = isset( $_GET['order_id'] ) ? intval( wp_unslash( $_GET['order_id'] ) ) : 0;
+$claim_desk_order_id = isset( $_GET['order_id'] ) ? intval( wp_unslash( $_GET['order_id'] ) ) : 0;
 // Basic validation
-if ( ! $order_id ) {
+if ( ! $claim_desk_order_id ) {
     echo '<div class="container"><p>Invalid Order ID.</p></div>';
     return;
 }
@@ -45,7 +45,7 @@ if ( ! $order_id ) {
         <div class="card-header">
             <h1 class="card-title"><?php
             /* translators: %1$d = Order ID. Numbered placeholder allows translators to reorder text if needed. */
-            printf( __('Claim for Order #%1$d', 'claim-desk'), $order_id );
+            printf( __('Claim for Order #%1$d', 'claim-desk'), $claim_desk_order_id );
             ?></h1>
             <p class="card-subtitle"><?php esc_html_e('Follow the steps below to submit your claim.', 'claim-desk'); ?></p>
         </div>
