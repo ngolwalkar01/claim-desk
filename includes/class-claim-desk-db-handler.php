@@ -119,22 +119,43 @@ class Claim_Desk_DB_Handler {
      */
     public function get_claimed_items_by_order( $order_id ) {
         global $wpdb;
-        
 
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $sql = "SELECT i.order_item_id, i.qty_claimed, c.status
+                FROM " . $this->table_items . " i
+                JOIN " . $this->table_claims . " c ON i.claim_id = c.id
+                WHERE c.order_id = %d 
+                AND c.status != 'rejected'";
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $results = $wpdb->get_results( $wpdb->prepare( "SELECT i.order_item_id, i.qty_claimed, c.status FROM {$this->table_items} i JOIN {$this->table_claims} c ON i.claim_id = c.id WHERE c.order_id = %d AND c.status != 'rejected'", $order_id ) );
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $query = $wpdb->prepare( $sql, $order_id );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $results = $wpdb->get_results( $query );
         
         if ( empty( $results ) ) {
             // Check if ANY claims exist for this order
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $check_claims = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table_claims} WHERE order_id = %d", $order_id ) );
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $sql_check = "SELECT * FROM " . $this->table_claims . " WHERE order_id = %d";
+            
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $query_check = $wpdb->prepare( $sql_check, $order_id );
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $check_claims = $wpdb->get_results( $query_check );
+
             if ( ! empty( $check_claims ) ) {
                  // Check items for first claim
                  $first_claim_id = $check_claims[0]->id;
-                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                 $check_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table_items} WHERE claim_id = %d", $first_claim_id ) );
-            } else {
+
+                 // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                 $sql_items = "SELECT * FROM " . $this->table_items . " WHERE claim_id = %d";
+                 
+                 // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+                 $query_items = $wpdb->prepare( $sql_items, $first_claim_id );
+
+                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                 $check_items = $wpdb->get_results( $query_items );
             }
         }
 
@@ -177,8 +198,14 @@ class Claim_Desk_DB_Handler {
     public function get_claim_attachments( $claim_id ) {
         global $wpdb;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table_attachments} WHERE claim_id = %d ORDER BY uploaded_at ASC", $claim_id ) );
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $sql = "SELECT * FROM " . $this->table_attachments . " WHERE claim_id = %d ORDER BY uploaded_at ASC";
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $query = $wpdb->prepare( $sql, $claim_id );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        return $wpdb->get_results( $query );
     }
 
 }
