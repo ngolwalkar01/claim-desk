@@ -124,7 +124,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
             'page' => 'claim-desk',
             'tab' => 'claims',
             'action' => 'view',
-            'id' => $item->id
+            'id' => $item->id,
+            '_wpnonce' => wp_create_nonce( 'view_claim' )
         ), admin_url( 'admin.php' ) );
 
         return sprintf( '<a href="%s" class="button">%s</a>', esc_url($url), esc_html($msg) );
