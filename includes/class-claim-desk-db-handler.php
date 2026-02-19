@@ -120,18 +120,12 @@ class Claim_Desk_DB_Handler {
     public function get_claimed_items_by_order( $order_id ) {
         global $wpdb;
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $sql = "SELECT i.order_item_id, i.qty_claimed, c.status
-                FROM " . $this->table_items . " i
-                JOIN " . $this->table_claims . " c ON i.claim_id = c.id
-                WHERE c.order_id = %d 
-                AND c.status != 'rejected'";
-
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-        $query = $wpdb->prepare( $sql, $order_id );
-
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-        $results = $wpdb->get_results( $query );
+        $results = $wpdb->get_results( $wpdb->prepare( "SELECT i.order_item_id, i.qty_claimed, c.status
+                FROM %s i
+                JOIN %s c ON i.claim_id = c.id
+                WHERE c.order_id = %d 
+                AND c.status != 'rejected'", $this->table_items, $this->table_claims, $order_id ) );
         
         if ( empty( $results ) ) {
             // Check if ANY claims exist for this order
