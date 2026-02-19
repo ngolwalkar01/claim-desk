@@ -202,10 +202,10 @@ class Claim_Desk_DB_Handler {
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $sql = "SELECT * FROM " . $this->table_attachments . " WHERE claim_id = %d ORDER BY uploaded_at ASC";
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-        $query = $wpdb->prepare( $sql, $claim_id );
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $query = $wpdb->prepare( $sql, (int) $claim_id );
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         return $wpdb->get_results( $query );
     }
 
