@@ -96,10 +96,52 @@ class Claim_Desk_Public {
     public function ajax_submit_claim() {
         check_ajax_referer( 'claim_desk_public_nonce', 'nonce' );
 
-        $order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
-        $scope    = isset( $_POST['scope'] ) ? sanitize_key( $_POST['scope'] ) : '';
-        $items    = isset( $_POST['items'] ) ? json_decode( wp_unslash( $_POST['items'] ), true ) : [];
-        $form_data = isset( $_POST['form_data'] ) ? json_decode( wp_unslash( $_POST['form_data'] ), true ) : [];
+        // Read + sanitize scalar inputs.
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $scope    = isset( $_POST['scope'] ) ? sanitize_key( wp_unslash( $_POST['scope'] ) ) : '';
+
+        // Read raw JSON strings, decode, then sanitize decoded structures.
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $items_raw = isset( $_POST['items'] ) ? (string) wp_unslash( $_POST['items'] ) : '';
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $form_data_raw = isset( $_POST['form_data'] ) ? (string) wp_unslash( $_POST['form_data'] ) : '';
+
+        $items_decoded = $items_raw !== '' ? json_decode( $items_raw, true ) : array();
+        $form_data_decoded = $form_data_raw !== '' ? json_decode( $form_data_raw, true ) : array();
+
+        $items = array();
+        if ( is_array( $items_decoded ) ) {
+            foreach ( $items_decoded as $item_id => $qty ) {
+                $item_id = absint( $item_id );
+                $qty     = absint( $qty );
+                if ( $item_id > 0 && $qty > 0 ) {
+                    $items[ $item_id ] = $qty;
+                }
+            }
+        }
+
+        $form_data = array();
+        if ( is_array( $form_data_decoded ) ) {
+            foreach ( $form_data_decoded as $field ) {
+                if ( ! is_array( $field ) || ! isset( $field['name'] ) ) {
+                    continue;
+                }
+
+                $name = sanitize_key( (string) $field['name'] );
+                $value = isset( $field['value'] ) ? $field['value'] : '';
+
+                if ( is_array( $value ) ) {
+                    $value = wp_json_encode( $value );
+                }
+
+                $form_data[] = array(
+                    'name'  => $name,
+                    'value' => sanitize_text_field( (string) $value ),
+                );
+            }
+        }
 
         // 1. Validation
         if ( ! $order_id || ! $scope || empty( $items ) ) {
