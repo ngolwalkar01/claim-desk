@@ -138,11 +138,11 @@ class Claim_Desk_DB_Handler {
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             $sql_check = "SELECT * FROM " . $this->table_claims . " WHERE order_id = %d";
             
-            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-            $query_check = $wpdb->prepare( $sql_check, $order_id );
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $query_claims = $wpdb->prepare( $sql_check, $order_id );
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $check_claims = $wpdb->get_results( $query_check );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $check_claims = $wpdb->get_results( $query_claims );
 
             if ( ! empty( $check_claims ) ) {
                  // Check items for first claim
