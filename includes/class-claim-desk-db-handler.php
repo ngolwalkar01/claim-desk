@@ -146,15 +146,16 @@ class Claim_Desk_DB_Handler {
 
             if ( ! empty( $check_claims ) ) {
                  // Check items for first claim
-                 $first_claim_id = $check_claims[0]->id;
+                 // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                 $first_claim_id = (int) $check_claims[0]->id;
 
                  // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                  $sql_items = "SELECT * FROM " . $this->table_items . " WHERE claim_id = %d";
                  
-                 // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+                 // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                  $query_items = $wpdb->prepare( $sql_items, $first_claim_id );
 
-                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                  $check_items = $wpdb->get_results( $query_items );
             }
         }
