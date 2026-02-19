@@ -676,11 +676,12 @@ class Claim_Desk_Admin {
 
         // Redirect to avoid resubmission
         $redirect_url = add_query_arg( array(
-            'page'   => 'claim-desk',
-            'tab'    => 'claims',
-            'action' => 'view',
-            'id'     => $claim_id,
-            'msg'    => 'updated'
+            'page'     => 'claim-desk',
+            'tab'      => 'claims',
+            'action'   => 'view',
+            'id'       => $claim_id,
+            'msg'      => 'updated',
+            '_wpnonce' => wp_create_nonce( 'view_claim' )
         ), admin_url( 'admin.php' ) );
 
         wp_safe_redirect( $redirect_url );
