@@ -100,7 +100,10 @@ class Claim_Desk_Config_Manager {
 
         // Save Scopes (Legacy)
         if ( isset( $_POST['scopes'] ) ) {
-            $scopes = json_decode( stripslashes( $_POST['scopes'] ), true );
+            // Read raw JSON safely, then sanitize decoded structure below.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $scopes_raw = (string) wp_unslash( $_POST['scopes'] );
+            $scopes = json_decode( $scopes_raw, true );
             if ( is_array( $scopes ) ) {
                  // Sanitize legacy scopes structure
                  $clean_scopes = array();
@@ -129,7 +132,20 @@ class Claim_Desk_Config_Manager {
 
         // Save Resolutions
         if ( isset( $_POST['resolutions'] ) ) {
-            $resolutions = array_map( function($val) { return $val === 'true' || $val === '1'; }, $_POST['resolutions'] );
+            // Read raw array safely, then normalize values.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $resolutions_raw = wp_unslash( $_POST['resolutions'] );
+
+            $resolutions = array();
+            if ( is_array( $resolutions_raw ) ) {
+                $resolutions = array_map(
+                    static function ( $val ) {
+                        $val = sanitize_text_field( (string) $val );
+                        return ( 'true' === $val || '1' === $val );
+                    },
+                    $resolutions_raw
+                );
+            }
             update_option( 'claim_desk_resolutions', $resolutions );
         }
 
