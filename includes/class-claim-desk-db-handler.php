@@ -120,20 +120,23 @@ class Claim_Desk_DB_Handler {
     public function get_claimed_items_by_order( $order_id ) {
         global $wpdb;
 
+        $order_id = absint( $order_id );
+
+        $table_claims = esc_sql( $this->table_claims );
+
+        $table_items = esc_sql( $this->table_items );
+
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $results = $wpdb->get_results( $wpdb->prepare( "SELECT i.order_item_id, i.qty_claimed, c.status
                 FROM %s i
                 JOIN %s c ON i.claim_id = c.id
                 WHERE c.order_id = %d 
-                AND c.status != 'rejected'", $this->table_items, $this->table_claims, $order_id ) );
+                AND c.status != 'rejected'", $table_items, $table_claims, $order_id ) );
         
         if ( empty( $results ) ) {
             // Check if ANY claims exist for this order
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $sql_check = "SELECT * FROM " . $this->table_claims . " WHERE order_id = %d";
-            
-            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $query_claims = $wpdb->prepare( $sql_check, $order_id );
+            $query_claims = $wpdb->prepare( "SELECT * FROM %s WHERE order_id = %d", $table_claims, $order_id );
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             $check_claims = $wpdb->get_results( $query_claims );
@@ -144,10 +147,7 @@ class Claim_Desk_DB_Handler {
                  $first_claim_id = (int) $check_claims[0]->id;
 
                  // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                 $sql_items = "SELECT * FROM " . $this->table_items . " WHERE claim_id = %d";
-                 
-                 // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                 $query_items = $wpdb->prepare( $sql_items, $first_claim_id );
+                 $query_items = $wpdb->prepare( "SELECT * FROM %s WHERE claim_id = %d", $table_items, $first_claim_id );
 
                  // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                  $check_items = $wpdb->get_results( $query_items );
