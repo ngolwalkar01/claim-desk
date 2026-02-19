@@ -193,11 +193,12 @@ class Claim_Desk_DB_Handler {
     public function get_claim_attachments( $claim_id ) {
         global $wpdb;
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $sql = "SELECT * FROM " . $this->table_attachments . " WHERE claim_id = %d ORDER BY uploaded_at ASC";
+        $claim_id = absint($claim_id);
+
+        $table_attachments = esc_sql( $this->table_attachments ); 
 
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $query = $wpdb->prepare( $sql, (int) $claim_id );
+        $query = $wpdb->prepare( "SELECT * FROM %s WHERE claim_id = %d ORDER BY uploaded_at ASC", $table_attachments, $claim_id );
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         return $wpdb->get_results( $query );
