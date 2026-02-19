@@ -151,7 +151,10 @@ class Claim_Desk_Config_Manager {
 
         // Save Problems
         if ( isset( $_POST['problems'] ) ) {
-            $problems = json_decode( stripslashes( $_POST['problems'] ), true );
+            // Read raw JSON safely, then sanitize decoded structure below.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $problems_raw = (string) wp_unslash( $_POST['problems'] );
+            $problems     = json_decode( $problems_raw, true );
             if ( is_array( $problems ) ) {
                 $clean_problems = array_map( function($p) {
                     return array(
@@ -165,7 +168,10 @@ class Claim_Desk_Config_Manager {
 
         // Save Conditions
         if ( isset( $_POST['conditions'] ) ) {
-            $conditions = json_decode( stripslashes( $_POST['conditions'] ), true );
+            // Read raw JSON safely, then sanitize decoded structure below.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $conditions_raw = (string) wp_unslash( $_POST['conditions'] );
+            $conditions     = json_decode( $conditions_raw, true );
             if ( is_array( $conditions ) ) {
                 $clean_conditions = array_map( function($c) {
                     return array(
