@@ -65,13 +65,14 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         // Query
         // Count total items
-        $total_query = "SELECT COUNT(id) FROM " . $table_name;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
-        $total_items = $wpdb->get_var( $total_query );
+        // Table name is safe (constructed from $wpdb->prefix)
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $total_items = $wpdb->get_var( "SELECT COUNT(id) FROM {$table_name}" );
         
-        $sql = "SELECT * FROM " . $table_name . " ORDER BY " . $orderby . " " . $order . " LIMIT %d OFFSET %d";
+        // Build SQL query with validated ORDER BY (column names cannot be parameterized, but are validated against whitelist)
+        // $orderby and $order are validated above, so safe to use directly
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $this->items = $wpdb->get_results( $wpdb->prepare( $sql, $per_page, $offset ) );
+        $this->items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table_name} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", $per_page, $offset ) );
 
 
 
