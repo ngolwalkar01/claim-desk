@@ -67,7 +67,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
         // Count total items
         // Table name is safe (constructed from $wpdb->prefix)
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-        $total_items = $wpdb->get_var( "SELECT COUNT(id) FROM {$table_name}" );
+        $table_name  = esc_sql( $table_name );
+        $total_items = (int) $wpdb->get_var( "SELECT COUNT(id) FROM {$table_name}" );
         
         // Build SQL query with validated ORDER BY (column names cannot be parameterized, but are validated against whitelist)
         // $orderby and $order are validated above, so safe to use directly
