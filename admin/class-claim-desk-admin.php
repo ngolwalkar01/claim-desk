@@ -161,10 +161,9 @@ class Claim_Desk_Admin {
             return;
         }
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $query_items = 'SELECT * FROM ' . $table_items . ' WHERE claim_id = %d';
+        
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $items = $wpdb->get_results( $wpdb->prepare( $query_items, $claim_id ) );
+        $items = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %s WHERE claim_id = %d', $table_items, $claim_id ) );
         $user = get_userdata( $claim->user_id );
         
         ?>
