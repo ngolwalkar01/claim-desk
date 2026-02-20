@@ -71,7 +71,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         if ( false === $total_items ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $total_items = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM %s", $table_name ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $total_items = (int) $wpdb->get_var( "SELECT COUNT(id) FROM $table_name" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             wp_cache_set( $cache_key_total, $total_items, 'claim-desk', 300 );
         }
         
@@ -87,7 +87,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         if ( false === $items ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %s ORDER BY %s %s LIMIT %d OFFSET %d", $table_name, $orderby, $order, $per_page, $offset ) );
+            $items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table_name ORDER BY %s %s LIMIT %d OFFSET %d", $orderby, $order, $per_page, $offset ) );
             wp_cache_set( $cache_key_items, $items, 'claim-desk', 300 );
         }
 
