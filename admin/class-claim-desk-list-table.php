@@ -65,15 +65,33 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         // Query
         // Count total items
-        // Table name is safe (constructed from $wpdb->prefix)
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $table_name  = esc_sql( $table_name );
-        $total_items = (int) $wpdb->get_var( $wpdb->prepare("SELECT COUNT(id) FROM %s", $table_name) );
+        $cache_key_total = 'cd_claims_total_count';
+        $total_items = wp_cache_get( $cache_key_total, 'claim-desk' );
+
+        if ( false === $total_items ) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $total_items = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM %s", $table_name ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            wp_cache_set( $cache_key_total, $total_items, 'claim-desk', 300 );
+        }
         
-        // Build SQL query with validated ORDER BY (column names cannot be parameterized, but are validated against whitelist)
-        // $orderby and $order are validated above, so safe to use directly
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $this->items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %s ORDER BY %s %s LIMIT %d OFFSET %d", $table_name, $orderby, $order, $per_page, $offset ) );
+        // Build SQL query with validated ORDER BY
+        $version = wp_cache_get( 'cd_claims_version', 'claim-desk' );
+        if ( false === $version ) {
+             $version = time();
+             wp_cache_set( 'cd_claims_version', $version, 'claim-desk', 3600 );
+        }
+
+        $cache_key_items = 'cd_claims_items_' . $version . '_' . md5( $orderby . $order . $per_page . $offset );
+        $items = wp_cache_get( $cache_key_items, 'claim-desk' );
+
+        if ( false === $items ) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %s ORDER BY %s %s LIMIT %d OFFSET %d", $table_name, $orderby, $order, $per_page, $offset ) );
+            wp_cache_set( $cache_key_items, $items, 'claim-desk', 300 );
+        }
+
+        $this->items = $items;
 
 
 
@@ -165,6 +183,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
                 $wpdb->delete( $table_claims, array( 'id' => $id ) );
             }
             echo '<div class="updated"><p>' . esc_html__( 'Claims deleted.', 'claim-desk' ) . '</p></div>';
+            wp_cache_delete( 'cd_claims_total_count', 'claim-desk' );
+            wp_cache_set( 'cd_claims_version', time(), 'claim-desk' );
         }
 
         if ( 'reject' === $action ) {
@@ -173,6 +193,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
                 $wpdb->update( $table_claims, array( 'status' => 'rejected' ), array( 'id' => $id ) );
             }
             echo '<div class="updated"><p>' . esc_html__( 'Claims rejected.', 'claim-desk' ) . '</p></div>';
+            wp_cache_delete( 'cd_claims_total_count', 'claim-desk' );
+            wp_cache_set( 'cd_claims_version', time(), 'claim-desk' );
         }
 
         if ( 'approve' === $action ) {
@@ -181,6 +203,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
                 $wpdb->update( $table_claims, array( 'status' => 'approved' ), array( 'id' => $id ) );
             }
             echo '<div class="updated"><p>' . esc_html__( 'Claims approved.', 'claim-desk' ) . '</p></div>';
+            wp_cache_delete( 'cd_claims_total_count', 'claim-desk' );
+            wp_cache_set( 'cd_claims_version', time(), 'claim-desk' );
         }
     }
 
