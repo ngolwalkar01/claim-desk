@@ -149,14 +149,12 @@ class Claim_Desk_Admin {
     private function display_claim_detail( $claim_id ) {
         global $wpdb;
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $table_claims = $wpdb->prefix . 'cd_claims';
+        $table_claims = esc_sql($wpdb->prefix . 'cd_claims');
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $table_items = $wpdb->prefix . 'cd_claim_items';
+        $table_items = esc_sql($wpdb->prefix . 'cd_claim_items');
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $query = 'SELECT * FROM ' . $table_claims . ' WHERE id = %d';
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $claim = $wpdb->get_row( $wpdb->prepare( $query, $claim_id ) );
+        $claim = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %s WHERE id = %d', $table_claims, $claim_id ) );
         
         if( ! $claim ) {
             echo '<div class="error"><p>Claim not found.</p></div>';
