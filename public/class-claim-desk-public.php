@@ -219,7 +219,7 @@ class Claim_Desk_Public {
                 'qty_total'     => $qty_total,
                 'qty_claimed'   => $qty,
                 'reason_slug'   => $reason_slug,
-                'dynamic_data'  => json_encode( $dynamic_fields )
+                'dynamic_data'  => wp_json_encode( $dynamic_fields )
             ));
         }
 
@@ -323,7 +323,8 @@ class Claim_Desk_Public {
     public function ajax_get_order_items() {
         check_ajax_referer( 'claim_desk_public_nonce', 'nonce' );
 
-        $order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
         if ( ! $order_id ) {
             wp_send_json_error( __( 'Invalid Order ID', 'claim-desk' ) );
         }

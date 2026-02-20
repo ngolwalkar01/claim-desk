@@ -153,8 +153,8 @@ class Claim_Desk_Admin {
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $table_items = esc_sql($wpdb->prefix . 'cd_claim_items');
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $claim = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_claims WHERE id = %d", $claim_id ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $claim = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_claims} WHERE id = %d", $claim_id ) );
         
         if( ! $claim ) {
             echo '<div class="error"><p>Claim not found.</p></div>';
@@ -162,8 +162,8 @@ class Claim_Desk_Admin {
         }
 
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table_items WHERE claim_id = %d", $claim_id ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table_items} WHERE claim_id = %d", $claim_id ) );
         $user = get_userdata( $claim->user_id );
         
         ?>

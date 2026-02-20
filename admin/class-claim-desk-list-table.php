@@ -70,8 +70,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
         $total_items = wp_cache_get( $cache_key_total, 'claim-desk' );
 
         if ( false === $total_items ) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $total_items = (int) $wpdb->get_var( "SELECT COUNT(id) FROM $table_name" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $total_items = (int) $wpdb->get_var( "SELECT COUNT(id) FROM {$table_name}" );
             wp_cache_set( $cache_key_total, $total_items, 'claim-desk', 300 );
         }
         
@@ -86,8 +86,9 @@ class Claim_Desk_List_Table extends WP_List_Table {
         $items = wp_cache_get( $cache_key_items, 'claim-desk' );
 
         if ( false === $items ) {
+            // WordPress prepare() cannot safely quote 'ORDER BY column_name' dynamically, so we must interpolate the sanitized variables and prepare the limits.
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table_name ORDER BY %s %s LIMIT %d OFFSET %d", $orderby, $order, $per_page, $offset ) );
+            $items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table_name} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", $per_page, $offset ) );
             wp_cache_set( $cache_key_items, $items, 'claim-desk', 300 );
         }
 
@@ -178,9 +179,9 @@ class Claim_Desk_List_Table extends WP_List_Table {
         if ( 'delete' === $action ) {
             foreach ( $claim_ids as $id ) {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                $wpdb->delete( $table_items, array( 'claim_id' => $id ) );
+                $wpdb->delete( $table_items, array( 'claim_id' => $id ), array( '%d' ) );
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                $wpdb->delete( $table_claims, array( 'id' => $id ) );
+                $wpdb->delete( $table_claims, array( 'id' => $id ), array( '%d' ) );
             }
             echo '<div class="updated"><p>' . esc_html__( 'Claims deleted.', 'claim-desk' ) . '</p></div>';
             wp_cache_delete( 'cd_claims_total_count', 'claim-desk' );
@@ -190,7 +191,13 @@ class Claim_Desk_List_Table extends WP_List_Table {
         if ( 'reject' === $action ) {
             foreach ( $claim_ids as $id ) {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                $wpdb->update( $table_claims, array( 'status' => 'rejected' ), array( 'id' => $id ) );
+                $wpdb->update( 
+                    $table_claims, 
+                    array( 'status' => 'rejected' ), 
+                    array( 'id' => $id ), 
+                    array( '%s' ), 
+                    array( '%d' ) 
+                );
             }
             echo '<div class="updated"><p>' . esc_html__( 'Claims rejected.', 'claim-desk' ) . '</p></div>';
             wp_cache_delete( 'cd_claims_total_count', 'claim-desk' );
@@ -200,7 +207,13 @@ class Claim_Desk_List_Table extends WP_List_Table {
         if ( 'approve' === $action ) {
             foreach ( $claim_ids as $id ) {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                $wpdb->update( $table_claims, array( 'status' => 'approved' ), array( 'id' => $id ) );
+                $wpdb->update( 
+                    $table_claims, 
+                    array( 'status' => 'approved' ), 
+                    array( 'id' => $id ), 
+                    array( '%s' ), 
+                    array( '%d' ) 
+                );
             }
             echo '<div class="updated"><p>' . esc_html__( 'Claims approved.', 'claim-desk' ) . '</p></div>';
             wp_cache_delete( 'cd_claims_total_count', 'claim-desk' );
