@@ -88,3 +88,7 @@
 .cd-remove-item:hover {
     color: #d00;
 }
+
+.claim-desk-config-wrapper .card {
+    max-width: 100% !important;
+}
