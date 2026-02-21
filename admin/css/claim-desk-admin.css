@@ -92,3 +92,7 @@
 .claim-desk-config-wrapper .card {
     max-width: 100% !important;
 }
+
+.claim-desk-content .card {
+    max-width: 100% !important;
+}
