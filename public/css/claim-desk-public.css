@@ -72,13 +72,15 @@
 }
 
 .cd-status-badge.is-eligible {
-	background: #e7f6eb;
-	color: #1f8f45;
+	background: #e7f8ec;
+	color: #15803d;
+	border: 1px solid #86efac;
 }
 
 .cd-status-badge.is-not-eligible {
-	background: #eef1f4;
-	color: #52606d;
+	background: #fdecec;
+	color: #b91c1c;
+	border: 1px solid #fecaca;
 }
 
 .cd-claim-row__actions {
@@ -91,13 +93,14 @@
 	min-width: 110px;
 }
 
-.cd-start-claim {
+.cd-start-claim:disabled {
 	background: #d7dbe0 !important;
 	border-color: #d7dbe0 !important;
 	color: #8795a1 !important;
 	pointer-events: none;
 }
 
+.cd-start-claim:not(:disabled),
 .cd-start-claim.is-active:not(:disabled) {
 	background: #2271b1 !important;
 	border-color: #2271b1 !important;
@@ -105,6 +108,7 @@
 	pointer-events: auto;
 }
 
+.cd-start-claim:not(:disabled):hover,
 .cd-start-claim.is-active:not(:disabled):hover {
 	background: #135e96 !important;
 	border-color: #135e96 !important;
