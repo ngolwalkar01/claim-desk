@@ -43,14 +43,18 @@ class Claim_Desk_Public {
 	 * Enqueue public styles.
 	 */
 	public function enqueue_styles() {
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/claim-desk-public.css', array(), $this->version, 'all' );
+		$style_path = plugin_dir_path( __FILE__ ) . 'css/claim-desk-public.css';
+		$style_ver  = file_exists( $style_path ) ? (string) filemtime( $style_path ) : $this->version;
+		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/claim-desk-public.css', array(), $style_ver, 'all' );
 	}
 
 	/**
 	 * Enqueue public scripts.
 	 */
 	public function enqueue_scripts() {
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/claim-desk-public.js', array( 'jquery' ), $this->version, true );
+		$script_path = plugin_dir_path( __FILE__ ) . 'js/claim-desk-public.js';
+		$script_ver  = file_exists( $script_path ) ? (string) filemtime( $script_path ) : $this->version;
+		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/claim-desk-public.js', array( 'jquery' ), $script_ver, true );
 
 		wp_localize_script(
 			$this->plugin_name,
@@ -254,8 +258,12 @@ class Claim_Desk_Public {
 			wp_send_json_error( __( 'Invalid claim type.', 'claim-desk' ) );
 		}
 
-		if ( '' === $problem_type || '' === $description || '' === $product_condition || '' === $refund_method ) {
+		if ( '' === $problem_type || '' === $description || '' === $refund_method ) {
 			wp_send_json_error( __( 'Please complete all required fields.', 'claim-desk' ) );
+		}
+
+		if ( '' === $product_condition ) {
+			$product_condition = 'not-specified';
 		}
 
 		$order = wc_get_order( $order_id );

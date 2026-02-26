@@ -9,6 +9,24 @@
 if ( ! defined( 'WPINC' ) ) {
 	die;
 }
+
+$claim_desk_conditions = (array) Claim_Desk_Config_Manager::get_conditions();
+if ( empty( $claim_desk_conditions ) ) {
+	$claim_desk_conditions = array(
+		array(
+			'value' => 'unopened',
+			'label' => __( 'Unopened', 'claim-desk' ),
+		),
+		array(
+			'value' => 'opened',
+			'label' => __( 'Opened', 'claim-desk' ),
+		),
+		array(
+			'value' => 'damaged',
+			'label' => __( 'Damaged', 'claim-desk' ),
+		),
+	);
+}
 ?>
 <section id="cd-order-claims" class="cd-order-claims" data-order-id="<?php echo esc_attr( $order->get_id() ); ?>">
 	<h3 class="cd-order-claims__title"><?php esc_html_e( 'Start a Claim', 'claim-desk' ); ?></h3>
@@ -116,8 +134,8 @@ if ( ! defined( 'WPINC' ) ) {
 					<label for="cd-product-condition"><?php esc_html_e( 'Product Condition', 'claim-desk' ); ?></label>
 					<select id="cd-product-condition" required>
 						<option value=""><?php esc_html_e( 'Select condition', 'claim-desk' ); ?></option>
-						<?php foreach ( (array) Claim_Desk_Config_Manager::get_conditions() as $condition ) : ?>
-							<option value="<?php echo esc_attr( $condition['value'] ); ?>"><?php echo esc_html( $condition['label'] ); ?></option>
+						<?php foreach ( $claim_desk_conditions as $condition ) : ?>
+							<option value="<?php echo esc_attr( isset( $condition['value'] ) ? $condition['value'] : '' ); ?>"><?php echo esc_html( isset( $condition['label'] ) ? $condition['label'] : '' ); ?></option>
 						<?php endforeach; ?>
 					</select>
 				</div>
