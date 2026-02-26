@@ -1,493 +1,261 @@
-(function ($) {
-    'use strict';
-
-    const ClaimDeskWizard = {
-        orderId: 0,
-        currentStep: 1,
-        selectedItems: {}, // { item_id: qty }
-        uploadedFiles: [],
-        claimType: '',
-
-        init: function () {
-            // Check if wizard exists
-            if ($('.cd-wizard-container').length === 0) {
-                return;
-            }
-
-            // Get Order ID from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            this.orderId = urlParams.get('order_id');
-
-            if (!this.orderId) {
-                return;
-            }
-
-            this.bindEvents();
-            this.renderConfig();
-            this.fetchItems();
-        },
-
-        // Render configuration from backend
-        renderConfig: function () {
-            if (typeof claim_desk_public === 'undefined') return;
-
-            // 1. Resolutions
-            if (claim_desk_public.resolutions) {
-                const res = claim_desk_public.resolutions;
-                $('.claim-type-card[data-claim-type="return"]').toggle(!!res.return);
-                $('.claim-type-card[data-claim-type="exchange"]').toggle(!!res.exchange);
-                $('.claim-type-card[data-claim-type="coupon"]').toggle(!!res.coupon);
-            }
-
-            // 2. Problem Types
-            if (claim_desk_public.problems && Array.isArray(claim_desk_public.problems)) {
-                const $select = $('#problemType');
-                $select.find('option:not(:first)').remove(); // Keep "Select..."
-                claim_desk_public.problems.forEach(p => {
-                    $select.append(new Option(p.label, p.value));
-                });
-            }
-
-            // 3. Product Conditions
-            if (claim_desk_public.conditions && Array.isArray(claim_desk_public.conditions)) {
-                const $select = $('#productCondition');
-                $select.find('option:not(:first)').remove();
-                claim_desk_public.conditions.forEach(c => {
-                    $select.append(new Option(c.label, c.value));
-                });
-            }
-        },
-
-        fetchItems: function () {
-            const $grid = $('#cd-product-grid');
-
-            $.post(claim_desk_public.ajax_url, {
-                action: 'claim_desk_get_order_items',
-                nonce: claim_desk_public.nonce,
-                order_id: this.orderId
-            }, (res) => {
-                if (res.success) {
-                    $grid.empty();
-                    // Handle new response structure (items is inside data.items)
-                    const items = res.data.items ? res.data.items : res.data;
-
-
-
-                    if (Array.isArray(items)) {
-                        items.forEach(item => {
-                            this.renderProductCard(item, $grid);
-                        });
-                    }
-                } else {
-                    $grid.html('<p class="error-message" style="display:block;">' + res.data + '</p>');
-                }
-            });
-        },
-
-        renderProductCard: function (item, $container) {
-            const self = this;
-            const available = parseInt(item.qty_available);
-            const isFullyClaimed = available <= 0;
-
-            let badgeHtml = '<span class="eligibility-badge badge-eligible">Eligible</span>';
-            if (isFullyClaimed) {
-                badgeHtml = '<span class="eligibility-badge badge-not-eligible">Already Claimed</span>';
-            }
-
-            const html = `
-                <div class="product-card ${isFullyClaimed ? 'disabled' : ''}" data-item-id="${item.id}">
-                    <input type="checkbox" class="product-checkbox" ${isFullyClaimed ? 'disabled' : ''}>
-                    <img src="${item.image}" alt="${item.name}" class="product-image">
-                    <div class="product-info">
-                        <div class="product-name">${item.name}</div>
-                        <div class="product-meta">Purchased: ${item.qty} | Available: ${available}</div>
-                        ${badgeHtml}
-                    </div>
-                    <div class="product-quantity">
-                        <label class="quantity-label">Claim Qty:</label>
-                        <select class="quantity-select" disabled>
-                            <option value="0">Select</option>
-                            ${this.generateQtyOptions(available)}
-                        </select>
-                    </div>
-                </div>
-            `;
-            const $card = $(html);
-            $container.append($card);
-
-            if (isFullyClaimed) return; // No events for claimed items
-
-            // Bind Card Events
-            const $checkbox = $card.find('.product-checkbox');
-            const $select = $card.find('.quantity-select');
-
-            $card.on('click', function (e) {
-                if (e.target !== $checkbox[0] && e.target !== $select[0]) {
-                    $checkbox.prop('checked', !$checkbox.prop('checked')).trigger('change');
-                }
-            });
-
-            $checkbox.on('change', function () {
-                if ($(this).is(':checked')) {
-                    $card.addClass('selected');
-                    $select.prop('disabled', false);
-                } else {
-                    $card.removeClass('selected');
-                    $select.prop('disabled', true).val(0);
-                    delete self.selectedItems[item.id];
-                }
-                self.validateStep1();
-            });
-
-            $select.on('change', function () {
-                const qty = parseInt($(this).val());
-                if (qty > 0) {
-                    self.selectedItems[item.id] = {
-                        qty: qty,
-                        name: item.name,
-                        image: item.image
-                    };
-                } else {
-                    delete self.selectedItems[item.id];
-                }
-                self.validateStep1();
-            });
-        },
-
-        generateQtyOptions: function (max) {
-            let opts = '';
-            for (let i = 1; i <= max; i++) {
-                opts += `<option value="${i}">${i}</option>`;
-            }
-            return opts;
-        },
-
-        bindEvents: function () {
-            const self = this;
-
-            // Step 1: Next
-            $('#step1Next').on('click', function () {
-                self.goToStep(2);
-            });
-
-            // Step 2: Back
-            $('#step2Back').on('click', function () {
-                self.goToStep(1);
-            });
-
-            // Step 2: Next
-            $('#step2Next').on('click', function () {
-                self.updateSummary();
-                self.goToStep(3);
-            });
-
-            // Step 3: Back
-            $('#step3Back').on('click', function () {
-                self.goToStep(2);
-            });
-
-            // Submit
-            $('#submitBtn').on('click', function () {
-                self.submitClaim();
-            });
-
-            // Claim Type Selection
-            $('.claim-type-card').on('click', function () {
-                $('.claim-type-card').removeClass('selected');
-                $(this).addClass('selected');
-                self.claimType = $(this).data('claim-type');
-
-                // Show/Hide Fields
-                if (self.claimType === 'exchange') {
-                    $('#exchangeOptions').slideDown();
-                    $('#returnOptions').slideUp();
-                } else if (self.claimType === 'return') {
-                    $('#exchangeOptions').slideUp();
-                    $('#returnOptions').slideDown();
-                } else {
-                    $('#exchangeOptions').slideUp();
-                    $('#returnOptions').slideUp();
-                }
-                self.validateStep2();
-            });
-
-            // File Upload
-            $('#fileUploadArea').on('click', function () {
-                $('#fileInput').click();
-            });
-
-            $('#fileInput').on('click', function (e) {
-                e.stopPropagation();
-            });
-
-            $('#fileInput').on('change', function (e) {
-                self.handleFiles(e.target.files);
-            });
-
-            /* Drag & Drop */
-            const $dropArea = $('#fileUploadArea');
-            $dropArea.on('dragover', function (e) {
-                e.preventDefault();
-                $(this).addClass('dragover');
-            });
-            $dropArea.on('dragleave drop', function (e) {
-                e.preventDefault();
-                $(this).removeClass('dragover');
-            });
-            $dropArea.on('drop', function (e) {
-                const files = e.originalEvent.dataTransfer.files;
-                self.handleFiles(files);
-            });
-
-            // Input Validation Step 2
-            $('#problemType, #problemDescription, #productCondition, #refundMethod, #replacementSize, #replacementColor').on('change input', function () {
-                self.validateStep2();
-            });
-
-            // Confirm Checkbox
-            $('#confirmCheckbox').on('change', function () {
-                $('#submitBtn').prop('disabled', !$(this).is(':checked'));
-            });
-
-            // File Remove with Event Delegation (works for dynamically created elements)
-            $(document).on('click', '.file-remove', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const $fileItem = $(this).closest('.file-item');
-                const idx = parseInt($(this).attr('data-idx'));
-
-                // Remove file from uploadedFiles array
-                if (!isNaN(idx) && idx >= 0 && idx < self.uploadedFiles.length) {
-                    self.uploadedFiles.splice(idx, 1);
-                }
-
-                // Remove from DOM
-                $fileItem.remove();
-
-                // Re-index remaining file items to keep data-idx in sync
-                $('#filePreview .file-remove').each(function (i) {
-                    $(this).attr('data-idx', i);
-                });
-            });
-        },
-
-        // ...
-
-        validateStep1: function () {
-            const hasItems = Object.keys(this.selectedItems).length > 0;
-            $('#step1Next').prop('disabled', !hasItems);
-
-            // Removed hardcoded problem types population from here
-        },
-
-        validateStep2: function () {
-            const problemType = $('#problemType').val();
-            const description = $('#problemDescription').val();
-            const condition = $('#productCondition').val();
-            let isValid = this.claimType && problemType && description && condition;
-
-            if (this.claimType === 'return') {
-                isValid = isValid && $('#refundMethod').val();
-            }
-
-            $('#step2Next').prop('disabled', !isValid);
-        },
-
-        handleFiles: function (files) {
-            const self = this;
-            const $preview = $('#filePreview');
-            const $errorMsg = $('#fileUploadError');
-            const maxSize = 2 * 1024 * 1024; // 2MB in bytes
-            const rejectedFiles = [];
-
-            // Clear previous error messages
-            $errorMsg.hide().empty();
-
-            Array.from(files).forEach(file => {
-                // Check max 5 files limit
-                if (self.uploadedFiles.length >= 5) {
-                    $errorMsg.text('Maximum 5 files allowed.').show();
-                    return;
-                }
-
-                // Check file size (2MB limit)
-                if (file.size > maxSize) {
-                    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                    rejectedFiles.push(`${file.name} (${fileSizeMB}MB)`);
-                    return; // Skip this file
-                }
-
-                // File is valid, add it
-                self.uploadedFiles.push(file);
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const idx = self.uploadedFiles.length - 1;
-                    const html = `
-                        <div class="file-item">
-                            <img src="${e.target.result}">
-                            <button class="file-remove" data-idx="${idx}">×</button>
-                        </div>
-                    `;
-                    $preview.append(html);
-                };
-                reader.readAsDataURL(file);
-            });
-
-            // Show error message for rejected files
-            if (rejectedFiles.length > 0) {
-                const errorText = rejectedFiles.length === 1
-                    ? `File ${rejectedFiles[0]} exceeds the 2MB limit and was not added.`
-                    : `${rejectedFiles.length} files exceed the 2MB limit: ${rejectedFiles.join(', ')}`;
-                $errorMsg.text(errorText).show();
-            }
-        },
-
-        updateSummary: function () {
-            // Products
-            const $prodSummary = $('#summaryProduct');
-            $prodSummary.empty();
-            $.each(this.selectedItems, function (id, data) {
-                $prodSummary.append(`
-                    <div class="summary-product">
-                        <img src="${data.image}" class="summary-product-image">
-                        <div>
-                            <div style="font-weight:600;">${data.name}</div>
-                            <div style="font-size:13px;">Qty: ${data.qty}</div>
-                        </div>
-                    </div>
-                 `);
-            });
-
-            $('#summaryClaimType').text(this.capitalize(this.claimType));
-            $('#summaryProblemType').text($('#problemType option:selected').text());
-            $('#summaryDescription').text($('#problemDescription').val());
-            $('#summaryCondition').text($('#productCondition option:selected').text());
-
-            if (this.claimType === 'return') {
-                $('#summaryRefundRow').show();
-                $('#summaryRefund').text($('#refundMethod option:selected').text());
-                $('#summaryReplacementRow').hide();
-            } else if (this.claimType === 'exchange') {
-                $('#summaryReplacementRow').show();
-                const size = $('#replacementSize').val() || '-';
-                const color = $('#replacementColor').val() || '-';
-                $('#summaryReplacement').text(`Size: ${size}, Color: ${color}`);
-                $('#summaryRefundRow').hide();
-            } else {
-                $('#summaryRefundRow').hide();
-                $('#summaryReplacementRow').hide();
-            }
-        },
-
-        submitClaim: function () {
-            const self = this;
-            const $btn = $('#submitBtn');
-
-            $btn.prop('disabled', true).text('Submitting...');
-
-            // Prepare Data
-            // We need to map new fields to what backend expects.
-            // Backend expects: scope, items (json), form_data (json array of name/value)
-
-            // Construct form_data array
-            const formData = [
-                { name: 'problem_type', value: $('#problemType').val() },
-                { name: 'description', value: $('#problemDescription').val() },
-                { name: 'condition', value: $('#productCondition').val() },
-                { name: 'resolution_type', value: this.claimType } // New field
-            ];
-
-            if (this.claimType === 'return') {
-                formData.push({ name: 'refund_method', value: $('#refundMethod').val() });
-            }
-            if (this.claimType === 'exchange') {
-                formData.push({ name: 'replacement_size', value: $('#replacementSize').val() });
-                formData.push({ name: 'replacement_color', value: $('#replacementColor').val() });
-            }
-
-            // Items payload: { id: qty }
-            const itemsPayload = {};
-            $.each(this.selectedItems, function (id, data) {
-                itemsPayload[id] = data.qty;
-            });
-
-
-            // Create FormData for multipart upload
-            const formDataObj = new FormData();
-            formDataObj.append('action', 'claim_desk_submit_claim');
-            formDataObj.append('nonce', claim_desk_public.nonce);
-            formDataObj.append('order_id', this.orderId);
-            formDataObj.append('scope', this.claimType);
-            formDataObj.append('items', JSON.stringify(itemsPayload));
-            formDataObj.append('form_data', JSON.stringify(formData));
-
-            // Append files
-            this.uploadedFiles.forEach((file, index) => {
-                formDataObj.append('files[]', file);
-            });
-
-            $.ajax({
-                url: claim_desk_public.ajax_url,
-                type: 'POST',
-                data: formDataObj,
-                processData: false,
-                contentType: false,
-                success: function (res) {
-                    if (res.success) {
-                        $('#generatedClaimId').text('#' + res.data.claim_id);
-                        $('.cd-wizard-container .step-content').removeClass('active');
-                        $('#successScreen').addClass('active');
-                        // Hide stepper
-                        $('.progress-stepper').hide();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    } else {
-                        alert(res.data);
-                        $btn.prop('disabled', false).text('Submit Claim');
-                    }
-                },
-                error: function () {
-                    alert('Server Error');
-                    $btn.prop('disabled', false).text('Submit Claim');
-                }
-            });
-        },
-
-        goToStep: function (step) {
-            this.currentStep = step;
-            $('.step-content').removeClass('active');
-            $('#step' + step).addClass('active');
-
-            // Stepper UI
-            $('.step').removeClass('active completed');
-            $('.step-indicator').removeClass('check').text(function () {
-                return $(this).parent().data('step');
-            });
-
-            $('.step').each(function () {
-                const s = $(this).data('step');
-                if (s < step) {
-                    $(this).addClass('completed');
-                    $(this).find('.step-indicator').addClass('check').text('');
-                } else if (s === step) {
-                    $(this).addClass('active');
-                }
-            });
-
-            const p = ((step - 1) / 2) * 100;
-            $('#stepperProgress').css('width', p + '%');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        },
-
-        capitalize: function (s) {
-            if (!s) return '';
-            return s.charAt(0).toUpperCase() + s.slice(1);
-        }
-    };
-
-    $(document).ready(function () {
-        ClaimDeskWizard.init();
-    });
-
-})(jQuery);
+( function ( $ ) {
+	'use strict';
+
+	const ClaimDeskProductFlow = {
+		orderId: 0,
+		activeRow: null,
+		activeData: {},
+		uploadedFiles: [],
+		lastFocused: null,
+
+		init: function () {
+			const $root = $( '#cd-order-claims' );
+			if ( ! $root.length || typeof claim_desk_public === 'undefined' ) {
+				return;
+			}
+
+			this.orderId = parseInt( $root.data( 'order-id' ), 10 ) || 0;
+			if ( ! this.orderId ) {
+				return;
+			}
+
+			this.bindRowEvents();
+			this.bindModalEvents();
+		},
+
+		bindRowEvents: function () {
+			const self = this;
+
+			$( document ).on( 'change', '.cd-claim-qty', function () {
+				const $row = $( this ).closest( '.cd-claim-row' );
+				const qty = parseInt( $( this ).val(), 10 ) || 0;
+				$row.find( '.cd-start-claim' ).prop( 'disabled', qty < 1 );
+			} );
+
+			$( document ).on( 'click', '.cd-start-claim', function () {
+				const $row = $( this ).closest( '.cd-claim-row' );
+				const qty = parseInt( $row.find( '.cd-claim-qty' ).val(), 10 ) || 0;
+
+				if ( qty < 1 ) {
+					self.setRowNotice( $row, claim_desk_public.i18n.select_quantity, true );
+					return;
+				}
+
+				self.activeRow = $row;
+				self.activeData = {
+					order_item_id: parseInt( $row.data( 'order-item-id' ), 10 ) || 0,
+					product_id: parseInt( $row.data( 'product-id' ), 10 ) || 0,
+					product_name: String( $row.data( 'product-name' ) || '' ),
+					quantity: qty
+				};
+
+				self.openModal();
+			} );
+		},
+
+		bindModalEvents: function () {
+			const self = this;
+			const $modal = $( '#cd-claim-modal' );
+
+			$( document ).on( 'click', '.cd-modal-close', function () {
+				self.closeModal();
+			} );
+
+			$( document ).on( 'change input', '#cd-claim-type, #cd-problem-type, #cd-problem-description, #cd-refund-method', function () {
+				self.updateReview();
+			} );
+
+			$( document ).on( 'change', '#cd-claim-images', function ( event ) {
+				self.handleFiles( event.target.files );
+			} );
+
+			$( document ).on( 'click', '#cd-submit-claim', function () {
+				self.submitClaim();
+			} );
+
+			$( document ).on( 'keydown', function ( event ) {
+				if ( event.key === 'Escape' && $modal.attr( 'aria-hidden' ) === 'false' ) {
+					self.closeModal();
+				}
+			} );
+		},
+
+		openModal: function () {
+			this.lastFocused = document.activeElement;
+			this.resetModalForm();
+			this.updateReview();
+
+			const $modal = $( '#cd-claim-modal' );
+			$modal.attr( 'aria-hidden', 'false' ).addClass( 'is-open' );
+			$( 'body' ).addClass( 'cd-modal-open' );
+			$( '#cd-claim-type' ).trigger( 'focus' );
+		},
+
+		closeModal: function () {
+			const $modal = $( '#cd-claim-modal' );
+			$modal.attr( 'aria-hidden', 'true' ).removeClass( 'is-open' );
+			$( 'body' ).removeClass( 'cd-modal-open' );
+			this.clearModalError();
+
+			if ( this.lastFocused ) {
+				$( this.lastFocused ).trigger( 'focus' );
+			}
+		},
+
+		resetModalForm: function () {
+			this.uploadedFiles = [];
+
+			$( '#cd-claim-type' ).val( '' );
+			$( '#cd-problem-type' ).val( '' );
+			$( '#cd-problem-description' ).val( '' );
+			$( '#cd-refund-method' ).val( '' );
+			$( '#cd-claim-images' ).val( '' );
+			$( '#cd-claim-files-preview' ).empty();
+			this.clearModalError();
+		},
+
+		handleFiles: function ( files ) {
+			const maxSize = 2 * 1024 * 1024;
+			const maxFiles = 5;
+			const nextFiles = [];
+			let errorMessage = '';
+
+			Array.from( files ).forEach( function ( file ) {
+				if ( nextFiles.length >= maxFiles ) {
+					return;
+				}
+
+				if ( file.size > maxSize ) {
+					errorMessage = file.name + ' exceeds 2MB.';
+					return;
+				}
+
+				nextFiles.push( file );
+			} );
+
+			this.uploadedFiles = nextFiles;
+			this.renderFilePreview();
+
+			if ( errorMessage ) {
+				this.showModalError( errorMessage );
+			}
+		},
+
+		renderFilePreview: function () {
+			const $preview = $( '#cd-claim-files-preview' );
+			$preview.empty();
+
+			this.uploadedFiles.forEach( function ( file ) {
+				$preview.append( '<span class="cd-claim-file-tag">' + ClaimDeskProductFlow.escapeHtml( file.name ) + '</span>' );
+			} );
+		},
+
+		updateReview: function () {
+			$( '#cd-review-product' ).text( this.activeData.product_name || '-' );
+			$( '#cd-review-qty' ).text( this.activeData.quantity || '-' );
+			$( '#cd-review-claim-type' ).text( $( '#cd-claim-type option:selected' ).text() || '-' );
+			$( '#cd-review-problem' ).text( $( '#cd-problem-type option:selected' ).text() || '-' );
+			$( '#cd-review-refund' ).text( $( '#cd-refund-method option:selected' ).text() || '-' );
+		},
+
+		validateForm: function () {
+			const claimType = String( $( '#cd-claim-type' ).val() || '' );
+			const problemType = String( $( '#cd-problem-type' ).val() || '' );
+			const description = String( $( '#cd-problem-description' ).val() || '' ).trim();
+			const refundMethod = String( $( '#cd-refund-method' ).val() || '' );
+
+			if ( ! claimType || ! problemType || ! description || ! refundMethod ) {
+				this.showModalError( 'Please complete all required fields.' );
+				return false;
+			}
+
+			if ( ! this.activeData.order_item_id || ! this.activeData.product_id || ! this.activeData.quantity ) {
+				this.showModalError( 'Invalid product selection.' );
+				return false;
+			}
+
+			return true;
+		},
+
+		submitClaim: function () {
+			const self = this;
+			if ( ! this.validateForm() ) {
+				return;
+			}
+
+			const $button = $( '#cd-submit-claim' );
+			const originalText = $button.text();
+			this.clearModalError();
+			$button.prop( 'disabled', true ).addClass( 'is-loading' ).text( claim_desk_public.i18n.loading );
+
+			const formData = new FormData();
+			formData.append( 'action', 'claim_desk_submit_claim' );
+			formData.append( 'nonce', claim_desk_public.nonce );
+			formData.append( 'order_id', this.orderId );
+			formData.append( 'order_item_id', this.activeData.order_item_id );
+			formData.append( 'product_id', this.activeData.product_id );
+			formData.append( 'quantity', this.activeData.quantity );
+			formData.append( 'claim_type', $( '#cd-claim-type' ).val() );
+			formData.append( 'problem_type', $( '#cd-problem-type' ).val() );
+			formData.append( 'description', $( '#cd-problem-description' ).val() );
+			formData.append( 'refund_method', $( '#cd-refund-method' ).val() );
+
+			this.uploadedFiles.forEach( function ( file ) {
+				formData.append( 'files[]', file );
+			} );
+
+			$.ajax( {
+				url: claim_desk_public.ajax_url,
+				type: 'POST',
+				data: formData,
+				processData: false,
+				contentType: false
+			} ).done( function ( response ) {
+				if ( ! response || ! response.success ) {
+					const message = response && response.data ? response.data : claim_desk_public.i18n.server_error;
+					self.showModalError( message );
+					return;
+				}
+
+				self.setRowNotice( self.activeRow, response.data.message, false );
+				self.activeRow.addClass( 'is-claimed' );
+				self.activeRow.find( '.cd-claim-qty' ).prop( 'disabled', true );
+				self.activeRow.find( '.cd-start-claim' ).prop( 'disabled', true );
+				self.closeModal();
+			} ).fail( function () {
+				self.showModalError( claim_desk_public.i18n.server_error );
+			} ).always( function () {
+				$button.prop( 'disabled', false ).removeClass( 'is-loading' ).text( originalText || claim_desk_public.i18n.submit );
+			} );
+		},
+
+		setRowNotice: function ( $row, message, isError ) {
+			const className = isError ? 'cd-claim-row__notice--error' : 'cd-claim-row__notice--success';
+			$row.find( '.cd-claim-row__notice' ).html( '<span class="' + className + '">' + this.escapeHtml( message ) + '</span>' );
+		},
+
+		showModalError: function ( message ) {
+			$( '#cd-claim-error' ).text( message ).addClass( 'is-visible' );
+		},
+
+		clearModalError: function () {
+			$( '#cd-claim-error' ).removeClass( 'is-visible' ).empty();
+		},
+
+		escapeHtml: function ( text ) {
+			return String( text ).replace( /[&<>"']/g, function ( character ) {
+				return {
+					'&': '&amp;',
+					'<': '&lt;',
+					'>': '&gt;',
+					'"': '&quot;',
+					"'": '&#39;'
+				}[ character ];
+			} );
+		}
+	};
+
+	$( function () {
+		ClaimDeskProductFlow.init();
+	} );
+}( jQuery ) );
