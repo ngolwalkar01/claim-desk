@@ -61,7 +61,7 @@
 				self.closeModal();
 			} );
 
-			$( document ).on( 'change input', '#cd-claim-type, #cd-problem-type, #cd-problem-description, #cd-refund-method', function () {
+			$( document ).on( 'change input', '#cd-claim-type, #cd-problem-type, #cd-problem-description, #cd-product-condition, #cd-refund-method', function () {
 				self.updateReview();
 			} );
 
@@ -108,6 +108,7 @@
 			$( '#cd-claim-type' ).val( '' );
 			$( '#cd-problem-type' ).val( '' );
 			$( '#cd-problem-description' ).val( '' );
+			$( '#cd-product-condition' ).val( '' );
 			$( '#cd-refund-method' ).val( '' );
 			$( '#cd-claim-images' ).val( '' );
 			$( '#cd-claim-files-preview' ).empty();
@@ -155,6 +156,7 @@
 			$( '#cd-review-qty' ).text( this.activeData.quantity || '-' );
 			$( '#cd-review-claim-type' ).text( $( '#cd-claim-type option:selected' ).text() || '-' );
 			$( '#cd-review-problem' ).text( $( '#cd-problem-type option:selected' ).text() || '-' );
+			$( '#cd-review-condition' ).text( $( '#cd-product-condition option:selected' ).text() || '-' );
 			$( '#cd-review-refund' ).text( $( '#cd-refund-method option:selected' ).text() || '-' );
 		},
 
@@ -162,9 +164,10 @@
 			const claimType = String( $( '#cd-claim-type' ).val() || '' );
 			const problemType = String( $( '#cd-problem-type' ).val() || '' );
 			const description = String( $( '#cd-problem-description' ).val() || '' ).trim();
+			const productCondition = String( $( '#cd-product-condition' ).val() || '' );
 			const refundMethod = String( $( '#cd-refund-method' ).val() || '' );
 
-			if ( ! claimType || ! problemType || ! description || ! refundMethod ) {
+			if ( ! claimType || ! problemType || ! description || ! productCondition || ! refundMethod ) {
 				this.showModalError( 'Please complete all required fields.' );
 				return false;
 			}
@@ -198,6 +201,7 @@
 			formData.append( 'claim_type', $( '#cd-claim-type' ).val() );
 			formData.append( 'problem_type', $( '#cd-problem-type' ).val() );
 			formData.append( 'description', $( '#cd-problem-description' ).val() );
+			formData.append( 'product_condition', $( '#cd-product-condition' ).val() );
 			formData.append( 'refund_method', $( '#cd-refund-method' ).val() );
 
 			this.uploadedFiles.forEach( function ( file ) {

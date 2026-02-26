@@ -106,6 +106,16 @@ if ( ! defined( 'WPINC' ) ) {
 				</div>
 
 				<div class="cd-form-row">
+					<label for="cd-product-condition"><?php esc_html_e( 'Product Condition', 'claim-desk' ); ?></label>
+					<select id="cd-product-condition" required>
+						<option value=""><?php esc_html_e( 'Select condition', 'claim-desk' ); ?></option>
+						<?php foreach ( (array) Claim_Desk_Config_Manager::get_conditions() as $condition ) : ?>
+							<option value="<?php echo esc_attr( $condition['value'] ); ?>"><?php echo esc_html( $condition['label'] ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+
+				<div class="cd-form-row">
 					<label for="cd-refund-method"><?php esc_html_e( 'Refund Method', 'claim-desk' ); ?></label>
 					<select id="cd-refund-method" required>
 						<option value=""><?php esc_html_e( 'Select refund method', 'claim-desk' ); ?></option>
@@ -127,6 +137,7 @@ if ( ! defined( 'WPINC' ) ) {
 					<p><strong><?php esc_html_e( 'Quantity:', 'claim-desk' ); ?></strong> <span id="cd-review-qty">-</span></p>
 					<p><strong><?php esc_html_e( 'Claim Type:', 'claim-desk' ); ?></strong> <span id="cd-review-claim-type">-</span></p>
 					<p><strong><?php esc_html_e( 'Problem Type:', 'claim-desk' ); ?></strong> <span id="cd-review-problem">-</span></p>
+					<p><strong><?php esc_html_e( 'Product Condition:', 'claim-desk' ); ?></strong> <span id="cd-review-condition">-</span></p>
 					<p><strong><?php esc_html_e( 'Refund Method:', 'claim-desk' ); ?></strong> <span id="cd-review-refund">-</span></p>
 				</div>
 

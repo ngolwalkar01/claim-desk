@@ -242,6 +242,8 @@ class Claim_Desk_Public {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$description = isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '';
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$product_condition = isset( $_POST['product_condition'] ) ? sanitize_key( wp_unslash( $_POST['product_condition'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$refund_method = isset( $_POST['refund_method'] ) ? sanitize_key( wp_unslash( $_POST['refund_method'] ) ) : '';
 
 		if ( ! $order_id || ! $order_item_id || ! $product_id || $quantity < 1 ) {
@@ -252,7 +254,7 @@ class Claim_Desk_Public {
 			wp_send_json_error( __( 'Invalid claim type.', 'claim-desk' ) );
 		}
 
-		if ( '' === $problem_type || '' === $description || '' === $refund_method ) {
+		if ( '' === $problem_type || '' === $description || '' === $product_condition || '' === $refund_method ) {
 			wp_send_json_error( __( 'Please complete all required fields.', 'claim-desk' ) );
 		}
 
@@ -299,8 +301,9 @@ class Claim_Desk_Public {
 		}
 
 		$dynamic_data = array(
-			'description'   => $description,
-			'refund_method' => $refund_method,
+			'description'       => $description,
+			'product_condition' => $product_condition,
+			'refund_method'     => $refund_method,
 		);
 
 		$item_created = $db->create_claim_item(
