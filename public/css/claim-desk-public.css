@@ -58,6 +58,29 @@
 	font-size: 0.92rem;
 }
 
+.cd-claim-row__badges {
+	margin-top: 0.5rem;
+}
+
+.cd-status-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.2rem 0.65rem;
+	border-radius: 6px;
+	font-size: 0.82rem;
+	font-weight: 600;
+}
+
+.cd-status-badge.is-eligible {
+	background: #e7f6eb;
+	color: #1f8f45;
+}
+
+.cd-status-badge.is-not-eligible {
+	background: #eef1f4;
+	color: #52606d;
+}
+
 .cd-claim-row__actions {
 	display: flex;
 	align-items: center;
@@ -66,6 +89,25 @@
 
 .cd-claim-qty {
 	min-width: 110px;
+}
+
+.cd-start-claim {
+	background: #d7dbe0 !important;
+	border-color: #d7dbe0 !important;
+	color: #8795a1 !important;
+	pointer-events: none;
+}
+
+.cd-start-claim.is-active:not(:disabled) {
+	background: #2271b1 !important;
+	border-color: #2271b1 !important;
+	color: #ffffff !important;
+	pointer-events: auto;
+}
+
+.cd-start-claim.is-active:not(:disabled):hover {
+	background: #135e96 !important;
+	border-color: #135e96 !important;
 }
 
 .cd-claim-row__notice {

@@ -29,7 +29,9 @@
 			$( document ).on( 'change', '.cd-claim-qty', function () {
 				const $row = $( this ).closest( '.cd-claim-row' );
 				const qty = parseInt( $( this ).val(), 10 ) || 0;
-				$row.find( '.cd-start-claim' ).prop( 'disabled', qty < 1 );
+				const $button = $row.find( '.cd-start-claim' );
+				$button.prop( 'disabled', qty < 1 );
+				$button.toggleClass( 'is-active', qty > 0 );
 			} );
 
 			$( document ).on( 'click', '.cd-start-claim', function () {
@@ -224,7 +226,7 @@
 				self.setRowNotice( self.activeRow, response.data.message, false );
 				self.activeRow.addClass( 'is-claimed' );
 				self.activeRow.find( '.cd-claim-qty' ).prop( 'disabled', true );
-				self.activeRow.find( '.cd-start-claim' ).prop( 'disabled', true );
+				self.activeRow.find( '.cd-start-claim' ).prop( 'disabled', true ).removeClass( 'is-active' );
 				self.closeModal();
 			} ).fail( function () {
 				self.showModalError( claim_desk_public.i18n.server_error );

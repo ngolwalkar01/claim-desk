@@ -42,6 +42,13 @@ if ( ! defined( 'WPINC' ) ) {
 							);
 							?>
 						</div>
+						<div class="cd-claim-row__badges">
+							<?php if ( $has_available ) : ?>
+								<span class="cd-status-badge is-eligible"><?php esc_html_e( 'Eligible', 'claim-desk' ); ?></span>
+							<?php else : ?>
+								<span class="cd-status-badge is-not-eligible"><?php esc_html_e( 'Not Eligible', 'claim-desk' ); ?></span>
+							<?php endif; ?>
+						</div>
 					</div>
 				</div>
 
