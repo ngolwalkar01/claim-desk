@@ -293,8 +293,9 @@
 
 				self.setRowNotice( self.activeRow, response.data.message, false );
 				self.activeRow.addClass( 'is-claimed is-locked' );
+				self.activeRow.attr( 'data-claim-status', 'pending' );
 				self.activeRow.attr( 'data-qty-available', '0' );
-				self.activeRow.find( '.cd-claim-row__badges' ).html( '<span class="cd-status-badge is-not-eligible">Not Eligible</span>' );
+				self.activeRow.find( '.cd-claim-row__badges' ).html( '<span class="cd-status-badge is-pending">Already claimed waiting for the merchant response</span>' );
 				self.activeRow.find( '.cd-claim-qty' ).val( '0' ).prop( 'disabled', true );
 				self.activeRow.find( '.cd-start-claim' ).prop( 'disabled', true ).removeClass( 'is-active' );
 				self.closeModal();

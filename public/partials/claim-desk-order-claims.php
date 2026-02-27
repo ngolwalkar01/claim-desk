@@ -35,16 +35,36 @@ if ( empty( $claim_desk_conditions ) ) {
 	<div class="cd-order-claims__list" role="list">
 		<?php foreach ( $claim_items as $claim_item ) : ?>
 			<?php
-			$has_available = $claim_item['qty_available'] > 0;
+			$has_available  = $claim_item['qty_available'] > 0;
+			$claim_status   = isset( $claim_item['claim_status'] ) ? sanitize_key( $claim_item['claim_status'] ) : '';
+			$badge_class    = 'is-not-eligible';
+			$badge_text     = __( 'Not Eligible', 'claim-desk' );
+			$locked_by_status = in_array( $claim_status, array( 'pending', 'approved' ), true );
+			$can_start_claim  = $has_available && ! $locked_by_status;
+
+			if ( 'pending' === $claim_status ) {
+				$badge_class = 'is-pending';
+				$badge_text  = __( 'Already claimed waiting for the merchant response', 'claim-desk' );
+			} elseif ( 'approved' === $claim_status ) {
+				$badge_class = 'is-approved';
+				$badge_text  = __( 'Approved', 'claim-desk' );
+			} elseif ( 'rejected' === $claim_status ) {
+				$badge_class = 'is-rejected';
+				$badge_text  = __( 'Rejected', 'claim-desk' );
+			} elseif ( $has_available ) {
+				$badge_class = 'is-eligible';
+				$badge_text  = __( 'Eligible', 'claim-desk' );
+			}
 			?>
 			<div
-				class="cd-claim-row<?php echo $has_available ? '' : ' is-locked'; ?>"
+				class="cd-claim-row<?php echo $can_start_claim ? '' : ' is-locked'; ?>"
 				role="listitem"
 				data-order-item-id="<?php echo esc_attr( $claim_item['order_item_id'] ); ?>"
 				data-product-id="<?php echo esc_attr( $claim_item['product_id'] ); ?>"
 				data-product-name="<?php echo esc_attr( $claim_item['name'] ); ?>"
 				data-product-image="<?php echo esc_url( $claim_item['image'] ); ?>"
 				data-qty-available="<?php echo esc_attr( $claim_item['qty_available'] ); ?>"
+				data-claim-status="<?php echo esc_attr( $claim_status ); ?>"
 			>
 				<div class="cd-claim-row__product">
 					<img class="cd-claim-row__image" src="<?php echo esc_url( $claim_item['image'] ); ?>" alt="">
@@ -61,11 +81,7 @@ if ( empty( $claim_desk_conditions ) ) {
 							?>
 						</div>
 						<div class="cd-claim-row__badges">
-							<?php if ( $has_available ) : ?>
-								<span class="cd-status-badge is-eligible"><?php esc_html_e( 'Eligible', 'claim-desk' ); ?></span>
-							<?php else : ?>
-								<span class="cd-status-badge is-not-eligible"><?php esc_html_e( 'Not Eligible', 'claim-desk' ); ?></span>
-							<?php endif; ?>
+							<span class="cd-status-badge <?php echo esc_attr( $badge_class ); ?>"><?php echo esc_html( $badge_text ); ?></span>
 						</div>
 					</div>
 				</div>
@@ -77,7 +93,7 @@ if ( empty( $claim_desk_conditions ) ) {
 					<select
 						id="cd-qty-<?php echo esc_attr( $claim_item['order_item_id'] ); ?>"
 						class="cd-claim-qty"
-						<?php disabled( ! $has_available ); ?>
+						<?php disabled( ! $can_start_claim ); ?>
 					>
 						<option value="0"><?php esc_html_e( 'Select qty', 'claim-desk' ); ?></option>
 						<?php for ( $qty = 1; $qty <= $claim_item['qty_available']; $qty++ ) : ?>
@@ -91,7 +107,13 @@ if ( empty( $claim_desk_conditions ) ) {
 				</div>
 
 				<div class="cd-claim-row__notice" aria-live="polite">
-					<?php if ( ! $has_available ) : ?>
+					<?php if ( 'pending' === $claim_status ) : ?>
+						<span class="cd-claim-row__notice--success"><?php esc_html_e( 'Already claimed waiting for the merchant response.', 'claim-desk' ); ?></span>
+					<?php elseif ( 'approved' === $claim_status ) : ?>
+						<span class="cd-claim-row__notice--success"><?php esc_html_e( 'Claim approved by merchant.', 'claim-desk' ); ?></span>
+					<?php elseif ( 'rejected' === $claim_status ) : ?>
+						<span class="cd-claim-row__notice--error"><?php esc_html_e( 'Claim rejected by merchant.', 'claim-desk' ); ?></span>
+					<?php elseif ( ! $has_available ) : ?>
 						<span class="cd-claim-row__notice--success"><?php esc_html_e( 'Claim already submitted for this product.', 'claim-desk' ); ?></span>
 					<?php endif; ?>
 				</div>

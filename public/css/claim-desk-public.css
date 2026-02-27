@@ -77,6 +77,24 @@
 	border: 1px solid #86efac;
 }
 
+.cd-status-badge.is-pending {
+	background: #fff7ed;
+	color: #c2410c;
+	border: 1px solid #fdba74;
+}
+
+.cd-status-badge.is-approved {
+	background: #e7f8ec;
+	color: #15803d;
+	border: 1px solid #86efac;
+}
+
+.cd-status-badge.is-rejected {
+	background: #fdecec;
+	color: #b91c1c;
+	border: 1px solid #fecaca;
+}
+
 .cd-status-badge.is-not-eligible {
 	background: #fdecec;
 	color: #b91c1c;

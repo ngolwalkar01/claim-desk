@@ -103,6 +103,7 @@ class Claim_Desk_Public {
 		}
 
 		$claimed_map = $this->get_claimed_qty_map( $order->get_id() );
+		$status_map  = $this->get_claim_status_map( $order->get_id() );
 		$claim_items = array();
 
 		foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
@@ -125,6 +126,7 @@ class Claim_Desk_Public {
 				'qty_total'     => $total_qty,
 				'qty_claimed'   => $claimed_qty,
 				'qty_available' => $available_qty,
+				'claim_status'  => isset( $status_map[ $item_id ] ) ? $status_map[ $item_id ] : '',
 			);
 		}
 
@@ -197,6 +199,7 @@ class Claim_Desk_Public {
 		}
 
 		$claimed_map = $this->get_claimed_qty_map( $order_id );
+		$status_map  = $this->get_claim_status_map( $order_id );
 		$items_data  = array();
 
 		foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
@@ -219,6 +222,7 @@ class Claim_Desk_Public {
 				'qty_claimed'   => $claimed_qty,
 				'qty_available' => $available_qty,
 				'image'         => $image_url,
+				'claim_status'  => isset( $status_map[ $item_id ] ) ? $status_map[ $item_id ] : '',
 			);
 		}
 
@@ -476,5 +480,51 @@ class Claim_Desk_Public {
 		}
 
 		return $claimed_map;
+	}
+
+	/**
+	 * Build latest claim status map by order item ID.
+	 *
+	 * @param int $order_id Order ID.
+	 * @return array
+	 */
+	private function get_claim_status_map( $order_id ) {
+		global $wpdb;
+
+		$claims_table = $wpdb->prefix . 'cd_claims';
+		$items_table  = $wpdb->prefix . 'cd_claim_items';
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT i.order_item_id, c.status, c.updated_at, c.id
+				FROM {$items_table} i
+				INNER JOIN {$claims_table} c ON c.id = i.claim_id
+				WHERE c.order_id = %d
+				ORDER BY c.updated_at DESC, c.id DESC",
+				absint( $order_id )
+			)
+		);
+
+		$status_map = array();
+		if ( empty( $rows ) ) {
+			return $status_map;
+		}
+
+		foreach ( $rows as $row ) {
+			$order_item_id = absint( $row->order_item_id );
+			if ( isset( $status_map[ $order_item_id ] ) ) {
+				continue;
+			}
+
+			$status = sanitize_key( $row->status );
+			if ( ! in_array( $status, array( 'pending', 'approved', 'rejected' ), true ) ) {
+				$status = '';
+			}
+
+			$status_map[ $order_item_id ] = $status;
+		}
+
+		return $status_map;
 	}
 }
