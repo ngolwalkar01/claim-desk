@@ -5,19 +5,19 @@
  * This file is read by WordPress to generate the plugin information in the plugin
  * administrative area. This file also includes all of the plugin dependencies.
  *
- * @link              https://example.com
- * @since             1.0.1
+ * @link              https://prozoned.com/claimdesk
+ * @since             1.0.0
  * @package           Claim_Desk
  *
  * @wordpress-plugin
- * Plugin Name:       Claim Desk
- * Plugin URI:        https://example.com/plugin-name
- * Description:       A generalized, multi-industry claim management system for WooCommerce with custom tables.
- * Version:           1.0.8
- * Author:            Your Name
- * Author URI:        https://example.com
+ * Plugin Name:       ClaimDesk – Return & Exchange Claim Manager
+ * Plugin URI:        https://prozoned.com/claimdesk
+ * Description:       Manage WooCommerce product return and exchange claims using a guided multi-step claim submission system.
+ * Version:           1.0.0
+ * Author:            Prozoned
+ * Author URI:        https://prozoned.com
  * License:           GPL-2.0+
- * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       claim-desk
  * Domain Path:       /languages
  */
@@ -30,13 +30,13 @@ if ( ! defined( 'WPINC' ) ) {
 /**
  * Currently plugin version.
  */
-define( 'CLAIM_DESK_VERSION', '1.0.8' );
+define( 'CLAIM_DESK_VERSION', '1.0.0' );
 
 /**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-claim-desk-activator.php
  */
-function activate_claim_desk() {
+function claim_desk_activate_plugin() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-claim-desk-activator.php';
 	Claim_Desk_Activator::activate();
 }
@@ -45,13 +45,13 @@ function activate_claim_desk() {
  * The code that runs during plugin deactivation.
  * This action is documented in includes/class-claim-desk-deactivator.php
  */
-function deactivate_claim_desk() {
+function claim_desk_deactivate_plugin() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-claim-desk-deactivator.php';
 	Claim_Desk_Deactivator::deactivate();
 }
 
-register_activation_hook( __FILE__, 'activate_claim_desk' );
-register_deactivation_hook( __FILE__, 'deactivate_claim_desk' );
+register_activation_hook( __FILE__, 'claim_desk_activate_plugin' );
+register_deactivation_hook( __FILE__, 'claim_desk_deactivate_plugin' );
 
 /**
  * Declare HPOS Compatibility.
@@ -77,10 +77,10 @@ require plugin_dir_path( __FILE__ ) . 'includes/class-claim-desk.php';
  *
  * @since    1.0.0
  */
-function run_claim_desk() {
+function claim_desk_run_plugin() {
 
 	$plugin = new Claim_Desk();
 	$plugin->run();
 
 }
-run_claim_desk();
+claim_desk_run_plugin();

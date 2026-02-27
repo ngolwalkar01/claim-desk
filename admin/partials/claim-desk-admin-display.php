@@ -9,9 +9,14 @@
  * @package    Claim_Desk
  * @subpackage Claim_Desk/admin/partials
  */
+
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
 ?>
 
-<!-- Content for All Claims Tab -->
+<!-- This file should primarily consist of HTML with a little bit of PHP. -->
 <div class="claim-desk-dashboard">
     <p><?php esc_html_e( 'Welcome to Claim Desk. Claims will appear here.', 'claim-desk' ); ?></p>
     <!-- Future: WP_List_Table of claims here -->

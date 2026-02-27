@@ -8,6 +8,11 @@
  * @subpackage Claim_Desk/includes
  */
 
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
+
 class Claim_Desk_Config_Manager {
 
     /**
@@ -60,13 +65,13 @@ class Claim_Desk_Config_Manager {
      */
     public static function get_problems() {
         $defaults = array(
-            array( 'value' => 'damaged', 'label' => __( 'Product Damaged', 'claim-desk' ) ),
-            array( 'value' => 'defective', 'label' => __( 'Product Defective', 'claim-desk' ) ),
-            array( 'value' => 'wrong-item', 'label' => __( 'Wrong Item Received', 'claim-desk' ) ),
-            array( 'value' => 'wrong-size', 'label' => __( 'Wrong Size/Color', 'claim-desk' ) ),
-            array( 'value' => 'not-as-described', 'label' => __( 'Not As Described', 'claim-desk' ) ),
-            array( 'value' => 'quality-issue', 'label' => __( 'Quality Issue', 'claim-desk' ) ),
-            array( 'value' => 'other', 'label' => __( 'Other', 'claim-desk' ) )
+            array( 'value' => 'damaged', 'label' => esc_html__( 'Product Damaged', 'claim-desk' ) ),
+            array( 'value' => 'defective', 'label' => esc_html__( 'Product Defective', 'claim-desk' ) ),
+            array( 'value' => 'wrong-item', 'label' => esc_html__( 'Wrong Item Received', 'claim-desk' ) ),
+            array( 'value' => 'wrong-size', 'label' => esc_html__( 'Wrong Size/Color', 'claim-desk' ) ),
+            array( 'value' => 'not-as-described', 'label' => esc_html__( 'Not As Described', 'claim-desk' ) ),
+            array( 'value' => 'quality-issue', 'label' => esc_html__( 'Quality Issue', 'claim-desk' ) ),
+            array( 'value' => 'other', 'label' => esc_html__( 'Other', 'claim-desk' ) )
         );
         return get_option( 'claim_desk_problems', $defaults );
     }
@@ -76,9 +81,9 @@ class Claim_Desk_Config_Manager {
      */
     public static function get_conditions() {
         $defaults = array(
-            array( 'value' => 'unopened', 'label' => __( 'Unopened', 'claim-desk' ) ),
-            array( 'value' => 'opened', 'label' => __( 'Opened', 'claim-desk' ) ),
-            array( 'value' => 'damaged', 'label' => __( 'Damaged', 'claim-desk' ) )
+            array( 'value' => 'unopened', 'label' => esc_html__( 'Unopened', 'claim-desk' ) ),
+            array( 'value' => 'opened', 'label' => esc_html__( 'Opened', 'claim-desk' ) ),
+            array( 'value' => 'damaged', 'label' => esc_html__( 'Damaged', 'claim-desk' ) )
         );
         return get_option( 'claim_desk_conditions', $defaults );
     }
@@ -95,7 +100,10 @@ class Claim_Desk_Config_Manager {
 
         // Save Scopes (Legacy)
         if ( isset( $_POST['scopes'] ) ) {
-            $scopes = json_decode( stripslashes( $_POST['scopes'] ), true );
+            // Read raw JSON safely, then sanitize decoded structure below.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $scopes_raw = (string) wp_unslash( $_POST['scopes'] );
+            $scopes = json_decode( $scopes_raw, true );
             if ( is_array( $scopes ) ) {
                  // Sanitize legacy scopes structure
                  $clean_scopes = array();
@@ -124,13 +132,29 @@ class Claim_Desk_Config_Manager {
 
         // Save Resolutions
         if ( isset( $_POST['resolutions'] ) ) {
-            $resolutions = array_map( function($val) { return $val === 'true' || $val === '1'; }, $_POST['resolutions'] );
+            // Read raw array safely, then normalize values.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $resolutions_raw = wp_unslash( $_POST['resolutions'] );
+
+            $resolutions = array();
+            if ( is_array( $resolutions_raw ) ) {
+                $resolutions = array_map(
+                    static function ( $val ) {
+                        $val = sanitize_text_field( (string) $val );
+                        return ( 'true' === $val || '1' === $val );
+                    },
+                    $resolutions_raw
+                );
+            }
             update_option( 'claim_desk_resolutions', $resolutions );
         }
 
         // Save Problems
         if ( isset( $_POST['problems'] ) ) {
-            $problems = json_decode( stripslashes( $_POST['problems'] ), true );
+            // Read raw JSON safely, then sanitize decoded structure below.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $problems_raw = (string) wp_unslash( $_POST['problems'] );
+            $problems     = json_decode( $problems_raw, true );
             if ( is_array( $problems ) ) {
                 $clean_problems = array_map( function($p) {
                     return array(
@@ -144,7 +168,10 @@ class Claim_Desk_Config_Manager {
 
         // Save Conditions
         if ( isset( $_POST['conditions'] ) ) {
-            $conditions = json_decode( stripslashes( $_POST['conditions'] ), true );
+            // Read raw JSON safely, then sanitize decoded structure below.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $conditions_raw = (string) wp_unslash( $_POST['conditions'] );
+            $conditions     = json_decode( $conditions_raw, true );
             if ( is_array( $conditions ) ) {
                 $clean_conditions = array_map( function($c) {
                     return array(

@@ -1,6 +1,6 @@
 /* Admin Config Styling */
 .claim-desk-config-wrapper {
-    max-width: 1200px;
+    width: 100%;
 }
 
 .cd-header {
@@ -87,4 +87,12 @@
 
 .cd-remove-item:hover {
     color: #d00;
+}
+
+.claim-desk-config-wrapper .card {
+    max-width: 100% !important;
+}
+
+.claim-desk-content .card {
+    max-width: 100% !important;
 }

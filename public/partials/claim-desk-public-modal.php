@@ -1,8 +1,14 @@
 <!-- Claim Desk Modal -->
+<?php
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
+?>
 <div class="cd-modal-overlay">
     <div class="cd-modal">
         <div class="cd-modal-header">
-            <h3><?php _e( 'Report a Problem', 'claim-desk' ); ?></h3>
+            <h3><?php esc_html_e( 'Report a Problem', 'claim-desk' ); ?></h3>
             <button class="cd-close-modal">&times;</button>
         </div>
         
@@ -10,7 +16,7 @@
             
             <!-- Step 1: Scope Selection -->
             <div id="cd-step-scope" class="cd-step-view">
-                <p class="cd-step-instruction"><?php _e( 'What kind of problem are you experiencing?', 'claim-desk' ); ?></p>
+                <p class="cd-step-instruction"><?php esc_html_e( 'What kind of problem are you experiencing?', 'claim-desk' ); ?></p>
                 <div class="cd-scope-selection" id="cd-scope-list">
                     <!-- Populated via JS -->
                 </div>
@@ -18,20 +24,20 @@
 
             <!-- Step 2: Item Selection -->
             <div id="cd-step-items" class="cd-step-view cd-hidden">
-                <p class="cd-step-instruction"><?php _e( 'Which items are affected?', 'claim-desk' ); ?></p>
+                <p class="cd-step-instruction"><?php esc_html_e( 'Which items are affected?', 'claim-desk' ); ?></p>
                 <div class="cd-items-list" id="cd-items-container">
-                    <p><?php _e( 'Loading items...', 'claim-desk' ); ?></p>
+                    <p><?php esc_html_e( 'Loading items...', 'claim-desk' ); ?></p>
                 </div>
             </div>
 
             <!-- Step 3: Details -->
             <div id="cd-step-details" class="cd-step-view cd-hidden">
-                <p class="cd-step-instruction"><?php _e( 'Please provide more details.', 'claim-desk' ); ?></p>
+                <p class="cd-step-instruction"><?php esc_html_e( 'Please provide more details.', 'claim-desk' ); ?></p>
                 
                 <form id="cd-details-form">
                     <!-- Reasons Section -->
                     <div class="cd-form-section">
-                        <h4><?php _e( 'Reason', 'claim-desk' ); ?> <span class="cd-req">*</span></h4>
+                        <h4><?php esc_html_e( 'Reason', 'claim-desk' ); ?> <span class="cd-req">*</span></h4>
                         <div id="cd-reasons-container" class="cd-reasons-grid"></div>
                     </div>
 
@@ -43,9 +49,9 @@
         </div>
 
         <div class="cd-modal-footer">
-            <button class="button cd-modal-back cd-hidden"><?php _e( 'Back', 'claim-desk' ); ?></button>
-            <button class="button button-primary cd-modal-next cd-hidden"><?php _e( 'Next', 'claim-desk' ); ?></button>
-            <button class="button button-primary cd-modal-submit cd-hidden"><?php _e( 'Submit Claim', 'claim-desk' ); ?></button>
+            <button class="button cd-modal-back cd-hidden"><?php esc_html_e( 'Back', 'claim-desk' ); ?></button>
+            <button class="button button-primary cd-modal-next cd-hidden"><?php esc_html_e( 'Next', 'claim-desk' ); ?></button>
+            <button class="button button-primary cd-modal-submit cd-hidden"><?php esc_html_e( 'Submit Claim', 'claim-desk' ); ?></button>
         </div>
     </div>
     

@@ -8,6 +8,11 @@
  * @subpackage Claim_Desk/public
  */
 
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
+
 class Claim_Desk_Public {
 
 	/**
@@ -91,10 +96,52 @@ class Claim_Desk_Public {
     public function ajax_submit_claim() {
         check_ajax_referer( 'claim_desk_public_nonce', 'nonce' );
 
-        $order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
-        $scope    = isset( $_POST['scope'] ) ? sanitize_key( $_POST['scope'] ) : '';
-        $items    = isset( $_POST['items'] ) ? json_decode( stripslashes( $_POST['items'] ), true ) : [];
-        $form_data = isset( $_POST['form_data'] ) ? json_decode( stripslashes( $_POST['form_data'] ), true ) : [];
+        // Read + sanitize scalar inputs.
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $scope    = isset( $_POST['scope'] ) ? sanitize_key( wp_unslash( $_POST['scope'] ) ) : '';
+
+        // Read raw JSON strings, decode, then sanitize decoded structures.
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $items_raw = isset( $_POST['items'] ) ? (string) wp_unslash( $_POST['items'] ) : '';
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $form_data_raw = isset( $_POST['form_data'] ) ? (string) wp_unslash( $_POST['form_data'] ) : '';
+
+        $items_decoded = $items_raw !== '' ? json_decode( $items_raw, true ) : array();
+        $form_data_decoded = $form_data_raw !== '' ? json_decode( $form_data_raw, true ) : array();
+
+        $items = array();
+        if ( is_array( $items_decoded ) ) {
+            foreach ( $items_decoded as $item_id => $qty ) {
+                $item_id = absint( $item_id );
+                $qty     = absint( $qty );
+                if ( $item_id > 0 && $qty > 0 ) {
+                    $items[ $item_id ] = $qty;
+                }
+            }
+        }
+
+        $form_data = array();
+        if ( is_array( $form_data_decoded ) ) {
+            foreach ( $form_data_decoded as $field ) {
+                if ( ! is_array( $field ) || ! isset( $field['name'] ) ) {
+                    continue;
+                }
+
+                $name = sanitize_key( (string) $field['name'] );
+                $value = isset( $field['value'] ) ? $field['value'] : '';
+
+                if ( is_array( $value ) ) {
+                    $value = wp_json_encode( $value );
+                }
+
+                $form_data[] = array(
+                    'name'  => $name,
+                    'value' => sanitize_text_field( (string) $value ),
+                );
+            }
+        }
 
         // 1. Validation
         if ( ! $order_id || ! $scope || empty( $items ) ) {
@@ -172,8 +219,93 @@ class Claim_Desk_Public {
                 'qty_total'     => $qty_total,
                 'qty_claimed'   => $qty,
                 'reason_slug'   => $reason_slug,
-                'dynamic_data'  => json_encode( $dynamic_fields )
+                'dynamic_data'  => wp_json_encode( $dynamic_fields )
             ));
+        }
+
+        // 3. Handle File Uploads
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        if ( ! empty( $_FILES['files'] ) ) {
+            require_once( ABSPATH . 'wp-admin/includes/file.php' );
+
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $files = $_FILES['files'];
+            $file_count = count( $files['name'] );
+
+            // Limit to 5 files
+            if ( $file_count > 5 ) {
+                wp_send_json_error( __( 'Maximum 5 files allowed.', 'claim-desk' ) );
+            }
+
+            // Allowed file types
+            $allowed_types = array( 'jpg', 'jpeg', 'png', 'gif', 'webp' );
+            $allowed_mimes = array(
+                'image/jpeg',
+                'image/jpg',
+                'image/png',
+                'image/gif',
+                'image/webp'
+            );
+
+            for ( $i = 0; $i < $file_count; $i++ ) {
+                // Skip empty files
+                if ( empty( $files['name'][$i] ) ) {
+                    continue;
+                }
+
+                // Check file size (2MB max)
+                if ( $files['size'][$i] > 2097152 ) {
+                    wp_send_json_error( __( 'File size must not exceed 2MB.', 'claim-desk' ) );
+                }
+
+                // Prepare file array for wp_handle_upload
+                $file = array(
+                    'name'     => $files['name'][$i],
+                    'type'     => $files['type'][$i],
+                    'tmp_name' => $files['tmp_name'][$i],
+                    'error'    => $files['error'][$i],
+                    'size'     => $files['size'][$i]
+                );
+
+                // Validate file type and extension
+                $filetype = wp_check_filetype_and_ext( $file['tmp_name'], $file['name'] );
+                $ext = $filetype['ext'];
+                $type = $filetype['type'];
+
+                // Check if extension and MIME type are allowed
+                if ( ! in_array( $ext, $allowed_types ) || ! in_array( $type, $allowed_mimes ) ) {
+                    wp_send_json_error( __( 'Invalid file type. Only JPG, PNG, GIF, and WEBP images are allowed.', 'claim-desk' ) );
+                }
+
+                // Upload file
+                $upload_overrides = array(
+                    'test_form' => false,
+                    'mimes'     => array(
+                        'jpg|jpeg|jpe' => 'image/jpeg',
+                        'png'          => 'image/png',
+                        'gif'          => 'image/gif',
+                        'webp'         => 'image/webp'
+                    )
+                );
+
+                $uploaded_file = wp_handle_upload( $file, $upload_overrides );
+
+                if ( isset( $uploaded_file['error'] ) ) {
+                    wp_send_json_error( $uploaded_file['error'] );
+                }
+
+                // Save attachment metadata to database
+                $upload_dir = wp_upload_dir();
+                $relative_path = str_replace( $upload_dir['basedir'], '', $uploaded_file['file'] );
+
+                $db->save_attachment( array(
+                    'claim_id'  => $claim_id,
+                    'file_path' => $relative_path,
+                    'file_name' => basename( $uploaded_file['file'] ),
+                    'file_type' => $uploaded_file['type'],
+                    'file_size' => filesize( $uploaded_file['file'] )
+                ));
+            }
         }
 
         wp_send_json_success( array(
@@ -191,7 +323,8 @@ class Claim_Desk_Public {
     public function ajax_get_order_items() {
         check_ajax_referer( 'claim_desk_public_nonce', 'nonce' );
 
-        $order_id = isset( $_POST['order_id'] ) ? intval( $_POST['order_id'] ) : 0;
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
         if ( ! $order_id ) {
             wp_send_json_error( __( 'Invalid Order ID', 'claim-desk' ) );
         }
@@ -293,7 +426,7 @@ class Claim_Desk_Public {
         ?>
         <p class="order-again">
             <a href="<?php echo esc_url( $claim_url ); ?>" class="button claim-desk-trigger">
-                <?php _e( 'Report Problem', 'claim-desk' ); ?>
+                <?php esc_html_e( 'Report Problem', 'claim-desk' ); ?>
             </a>
         </p>
         <?php

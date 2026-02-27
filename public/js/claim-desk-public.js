@@ -19,12 +19,11 @@
             this.orderId = urlParams.get('order_id');
 
             if (!this.orderId) {
-                console.error('Claim Desk: Missing Order ID');
                 return;
             }
 
             this.bindEvents();
-            this.renderConfig(); // New method
+            this.renderConfig();
             this.fetchItems();
         },
 
@@ -67,23 +66,17 @@
                 nonce: claim_desk_public.nonce,
                 order_id: this.orderId
             }, (res) => {
-                console.log('Claim Desk Debug Response:', res);
                 if (res.success) {
                     $grid.empty();
                     // Handle new response structure (items is inside data.items)
                     const items = res.data.items ? res.data.items : res.data;
 
-                    if (res.data.debug) {
-                        console.log('Claim Desk Server Debug:', res.data.debug);
-                        console.log('Claim Desk Raw Claims:', res.data.raw_claims);
-                    }
+
 
                     if (Array.isArray(items)) {
                         items.forEach(item => {
                             this.renderProductCard(item, $grid);
                         });
-                    } else {
-                        console.error('Expected array of items, got:', items);
                     }
                 } else {
                     $grid.html('<p class="error-message" style="display:block;">' + res.data + '</p>');
@@ -223,6 +216,10 @@
                 $('#fileInput').click();
             });
 
+            $('#fileInput').on('click', function (e) {
+                e.stopPropagation();
+            });
+
             $('#fileInput').on('change', function (e) {
                 self.handleFiles(e.target.files);
             });
@@ -251,6 +248,28 @@
             $('#confirmCheckbox').on('change', function () {
                 $('#submitBtn').prop('disabled', !$(this).is(':checked'));
             });
+
+            // File Remove with Event Delegation (works for dynamically created elements)
+            $(document).on('click', '.file-remove', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const $fileItem = $(this).closest('.file-item');
+                const idx = parseInt($(this).attr('data-idx'));
+
+                // Remove file from uploadedFiles array
+                if (!isNaN(idx) && idx >= 0 && idx < self.uploadedFiles.length) {
+                    self.uploadedFiles.splice(idx, 1);
+                }
+
+                // Remove from DOM
+                $fileItem.remove();
+
+                // Re-index remaining file items to keep data-idx in sync
+                $('#filePreview .file-remove').each(function (i) {
+                    $(this).attr('data-idx', i);
+                });
+            });
         },
 
         // ...
@@ -278,12 +297,28 @@
         handleFiles: function (files) {
             const self = this;
             const $preview = $('#filePreview');
+            const $errorMsg = $('#fileUploadError');
+            const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+            const rejectedFiles = [];
+
+            // Clear previous error messages
+            $errorMsg.hide().empty();
 
             Array.from(files).forEach(file => {
+                // Check max 5 files limit
                 if (self.uploadedFiles.length >= 5) {
-                    alert('Max 5 files');
+                    $errorMsg.text('Maximum 5 files allowed.').show();
                     return;
                 }
+
+                // Check file size (2MB limit)
+                if (file.size > maxSize) {
+                    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                    rejectedFiles.push(`${file.name} (${fileSizeMB}MB)`);
+                    return; // Skip this file
+                }
+
+                // File is valid, add it
                 self.uploadedFiles.push(file);
 
                 const reader = new FileReader();
@@ -300,11 +335,13 @@
                 reader.readAsDataURL(file);
             });
 
-            // Re-bind remove
-            $('.file-remove').off('click').on('click', function () {
-                // For MVP visual removal only, logic to remove from array requires re-render
-                $(this).parent().remove();
-            });
+            // Show error message for rejected files
+            if (rejectedFiles.length > 0) {
+                const errorText = rejectedFiles.length === 1
+                    ? `File ${rejectedFiles[0]} exceeds the 2MB limit and was not added.`
+                    : `${rejectedFiles.length} files exceed the 2MB limit: ${rejectedFiles.join(', ')}`;
+                $errorMsg.text(errorText).show();
+            }
         },
 
         updateSummary: function () {
@@ -376,30 +413,44 @@
                 itemsPayload[id] = data.qty;
             });
 
-            const data = {
-                action: 'claim_desk_submit_claim',
-                nonce: claim_desk_public.nonce,
-                order_id: this.orderId,
-                scope: this.claimType, // Using claim type as scope for now
-                items: JSON.stringify(itemsPayload),
-                form_data: JSON.stringify(formData)
-            };
 
-            $.post(claim_desk_public.ajax_url, data, function (res) {
-                if (res.success) {
-                    $('#generatedClaimId').text('#' + res.data.claim_id);
-                    $('.cd-wizard-container .step-content').removeClass('active');
-                    $('#successScreen').addClass('active');
-                    // Hide stepper
-                    $('.progress-stepper').hide();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    alert(res.data);
+            // Create FormData for multipart upload
+            const formDataObj = new FormData();
+            formDataObj.append('action', 'claim_desk_submit_claim');
+            formDataObj.append('nonce', claim_desk_public.nonce);
+            formDataObj.append('order_id', this.orderId);
+            formDataObj.append('scope', this.claimType);
+            formDataObj.append('items', JSON.stringify(itemsPayload));
+            formDataObj.append('form_data', JSON.stringify(formData));
+
+            // Append files
+            this.uploadedFiles.forEach((file, index) => {
+                formDataObj.append('files[]', file);
+            });
+
+            $.ajax({
+                url: claim_desk_public.ajax_url,
+                type: 'POST',
+                data: formDataObj,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.success) {
+                        $('#generatedClaimId').text('#' + res.data.claim_id);
+                        $('.cd-wizard-container .step-content').removeClass('active');
+                        $('#successScreen').addClass('active');
+                        // Hide stepper
+                        $('.progress-stepper').hide();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else {
+                        alert(res.data);
+                        $btn.prop('disabled', false).text('Submit Claim');
+                    }
+                },
+                error: function () {
+                    alert('Server Error');
                     $btn.prop('disabled', false).text('Submit Claim');
                 }
-            }).fail(function () {
-                alert('Server Error');
-                $btn.prop('disabled', false).text('Submit Claim');
             });
         },
 

@@ -2,9 +2,230 @@
     'use strict';
 
     /**
+     * Claim Desk Lightbox Manager
+     */
+    window.ClaimDeskLightbox = {
+        attachments: [],
+        currentIndex: 0,
+        currentZoom: 100,
+        minZoom: 50,
+        maxZoom: 300,
+        zoomStep: 25,
+
+        init: function () {
+            const dataElement = document.getElementById('cd-attachments-data');
+            if (dataElement) {
+                this.attachments = JSON.parse(dataElement.textContent);
+            }
+
+            // Update total count
+            if (this.attachments.length > 0) {
+                document.getElementById('cd-total-idx').textContent = this.attachments.length;
+            }
+
+            // Attach click handlers to gallery thumbnails using event delegation
+            $(document).on('click', '.cd-gallery-thumb', (e) => {
+                const idx = parseInt($(e.currentTarget).attr('data-idx'));
+                if (!isNaN(idx)) {
+                    this.open(idx);
+                }
+            });
+
+            // Close button handler
+            $(document).on('click', '.cd-lightbox-close', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.close();
+            });
+
+            // Zoom in button
+            $(document).on('click', '.cd-zoom-in', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.zoomIn();
+            });
+
+            // Zoom out button
+            $(document).on('click', '.cd-zoom-out', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.zoomOut();
+            });
+
+            // Reset zoom button
+            $(document).on('click', '.cd-reset-zoom', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.resetZoom();
+            });
+
+            // Navigation prev button
+            $(document).on('click', '.cd-nav-prev', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.prev();
+            });
+
+            // Navigation next button
+            $(document).on('click', '.cd-nav-next', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.next();
+            });
+
+            // Keyboard shortcuts
+            $(document).on('keydown', (e) => {
+                const modal = document.getElementById('cd-lightbox-modal');
+                if (!modal || !modal.classList.contains('active')) return;
+
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    this.prev();
+                }
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    this.next();
+                }
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    this.close();
+                }
+                if (e.key === '+' || e.key === '=') {
+                    e.preventDefault();
+                    this.zoomIn();
+                }
+                if (e.key === '-') {
+                    e.preventDefault();
+                    this.zoomOut();
+                }
+            });
+
+            // Close on outside click
+            $(document).on('click', '#cd-lightbox-modal', (e) => {
+                if (e.target.id === 'cd-lightbox-modal') {
+                    this.close();
+                }
+            });
+        },
+
+        open: function (index) {
+            if (!this.attachments || this.attachments.length === 0) return;
+
+            this.currentIndex = index;
+            this.currentZoom = 100;
+            this.displayImage();
+
+            const modal = document.getElementById('cd-lightbox-modal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        },
+
+        close: function () {
+            const modal = document.getElementById('cd-lightbox-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        },
+
+        displayImage: function () {
+            const attachment = this.attachments[this.currentIndex];
+            if (!attachment) return;
+
+            const img = document.getElementById('cd-lightbox-image');
+            const nameEl = document.getElementById('cd-image-name');
+            const indexEl = document.getElementById('cd-current-idx');
+            const sizeEl = document.getElementById('cd-image-size');
+            const dateEl = document.getElementById('cd-image-date');
+
+            img.src = attachment.url;
+            nameEl.textContent = attachment.name;
+            indexEl.textContent = this.currentIndex + 1;
+            sizeEl.textContent = attachment.size + ' KB';
+            dateEl.textContent = 'Uploaded: ' + attachment.date;
+
+            this.updateZoom();
+            this.updateNavButtons();
+        },
+
+        updateZoom: function () {
+            const img = document.getElementById('cd-lightbox-image');
+            const zoomLevel = document.getElementById('cd-zoom-level');
+
+            img.style.transform = 'scale(' + (this.currentZoom / 100) + ')';
+            zoomLevel.textContent = this.currentZoom + '%';
+        },
+
+        updateNavButtons: function () {
+            const prevBtn = document.querySelector('.cd-nav-prev');
+            const nextBtn = document.querySelector('.cd-nav-next');
+
+            if (this.currentIndex === 0) {
+                prevBtn.style.opacity = '0.3';
+                prevBtn.style.cursor = 'not-allowed';
+            } else {
+                prevBtn.style.opacity = '1';
+                prevBtn.style.cursor = 'pointer';
+            }
+
+            if (this.currentIndex === this.attachments.length - 1) {
+                nextBtn.style.opacity = '0.3';
+                nextBtn.style.cursor = 'not-allowed';
+            } else {
+                nextBtn.style.opacity = '1';
+                nextBtn.style.cursor = 'pointer';
+            }
+        },
+
+        prev: function () {
+            if (this.currentIndex > 0) {
+                this.currentIndex--;
+                this.displayImage();
+            }
+        },
+
+        next: function () {
+            if (this.currentIndex < this.attachments.length - 1) {
+                this.currentIndex++;
+                this.displayImage();
+            }
+        },
+
+        zoomIn: function () {
+            if (this.currentZoom < this.maxZoom) {
+                this.currentZoom += this.zoomStep;
+                if (this.currentZoom > this.maxZoom) {
+                    this.currentZoom = this.maxZoom;
+                }
+                this.updateZoom();
+            }
+        },
+
+        zoomOut: function () {
+            if (this.currentZoom > this.minZoom) {
+                this.currentZoom -= this.zoomStep;
+                if (this.currentZoom < this.minZoom) {
+                    this.currentZoom = this.minZoom;
+                }
+                this.updateZoom();
+            }
+        },
+
+        resetZoom: function () {
+            this.currentZoom = 100;
+            this.updateZoom();
+        }
+    };
+
+    /**
      * Claim Desk Admin Logic
      */
     $(document).ready(function () {
+        // Initialize lightbox
+        ClaimDeskLightbox.init();
+
         if ($('.claim-desk-config-wrapper').length) {
             initConfigPage();
         }

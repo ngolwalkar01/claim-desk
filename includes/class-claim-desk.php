@@ -10,6 +10,12 @@
  * @package    Claim_Desk
  * @subpackage Claim_Desk/includes
  */
+
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
+
 class Claim_Desk {
 
 	/**
@@ -58,7 +64,6 @@ class Claim_Desk {
 		$this->plugin_name = 'claim-desk';
 
 		$this->load_dependencies();
-		$this->set_locale();
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
 
@@ -113,23 +118,6 @@ class Claim_Desk {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-claim-desk-public.php';
 
 		$this->loader = new Claim_Desk_Loader();
-
-	}
-
-	/**
-	 * Define the locale for this plugin for internationalization.
-	 *
-	 * Uses the Claim_Desk_i18n class in order to set the domain and to register the hook
-	 * with WordPress.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 */
-	private function set_locale() {
-
-		$plugin_i18n = new Claim_Desk_i18n();
-
-		$this->loader->add_action( 'plugins_loaded', $plugin_i18n, 'load_plugin_textdomain' );
 
 	}
 

@@ -15,11 +15,13 @@ class Claim_Desk_DB_Handler {
      */
     private $table_claims;
     private $table_items;
+    private $table_attachments;
 
     public function __construct() {
         global $wpdb;
         $this->table_claims = $wpdb->prefix . 'cd_claims';
         $this->table_items = $wpdb->prefix . 'cd_claim_items';
+        $this->table_attachments = $wpdb->prefix . 'cd_claim_attachments';
     }
 
     /**
@@ -39,19 +41,20 @@ class Claim_Desk_DB_Handler {
 
         $args = wp_parse_args( $data, $defaults );
 
-        $format = array( '%d', '%d', '%s', '%s', '%s', '%s' ); // Adjust based on columns used
+        $format = array( '%d', '%d', '%s', '%s', '%s', '%s' );
         
         // We need 100% strict column mapping for $wpdb->insert
         $insert_data = array(
-            'order_id'   => $args['order_id'],
-            'user_id'    => $args['user_id'],
-            'type_slug'  => $args['type_slug'],
-            'status'     => $args['status'],
+            'order_id'   => absint( $args['order_id'] ),
+            'user_id'    => absint( $args['user_id'] ),
+            'type_slug'  => sanitize_text_field( $args['type_slug'] ),
+            'status'     => sanitize_key( $args['status'] ),
             'created_at' => $args['created_at'],
             'updated_at' => $args['updated_at']
         );
 
-        $result = $wpdb->insert( $this->table_claims, $insert_data );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $result = $wpdb->insert( $this->table_claims, $insert_data, $format );
 
         if ( $result ) {
             return $wpdb->insert_id;
@@ -70,16 +73,19 @@ class Claim_Desk_DB_Handler {
         global $wpdb;
 
         $insert_data = array(
-            'claim_id'      => $data['claim_id'],
-            'order_item_id' => $data['order_item_id'],
-            'product_id'    => $data['product_id'],
-            'qty_total'     => $data['qty_total'],
-            'qty_claimed'   => $data['qty_claimed'],
-            'reason_slug'   => $data['reason_slug'],
-            'dynamic_data'  => isset($data['dynamic_data']) ? $data['dynamic_data'] : null // JSON string
+            'claim_id'      => absint( $data['claim_id'] ),
+            'order_item_id' => absint( $data['order_item_id'] ),
+            'product_id'    => absint( $data['product_id'] ),
+            'qty_total'     => absint( $data['qty_total'] ),
+            'qty_claimed'   => absint( $data['qty_claimed'] ),
+            'reason_slug'   => sanitize_key( $data['reason_slug'] ),
+            'dynamic_data'  => isset( $data['dynamic_data'] ) ? $data['dynamic_data'] : null // JSON string
         );
 
-        $result = $wpdb->insert( $this->table_items, $insert_data );
+        $format = array( '%d', '%d', '%d', '%d', '%d', '%s', '%s' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $result = $wpdb->insert( $this->table_items, $insert_data, $format );
 
         if ( $result ) {
             return $wpdb->insert_id;
@@ -96,39 +102,84 @@ class Claim_Desk_DB_Handler {
      */
     public function get_claimed_items_by_order( $order_id ) {
         global $wpdb;
-        
-        // Log inputs
-        error_log( "Claim Desk Debug: get_claimed_items_by_order Order ID: " . $order_id );
 
-        $sql = "SELECT i.order_item_id, i.qty_claimed, c.status
+        $order_id = absint( $order_id );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $results = $wpdb->get_results( $wpdb->prepare( "SELECT i.order_item_id, i.qty_claimed, c.status
                 FROM {$this->table_items} i
                 JOIN {$this->table_claims} c ON i.claim_id = c.id
                 WHERE c.order_id = %d 
-                AND c.status != 'rejected'"; 
-        
-        $query = $wpdb->prepare( $sql, $order_id );
-        error_log( "Claim Desk Debug: SQL Query: " . $query );
-
-        $results = $wpdb->get_results( $query );
+                AND c.status != 'rejected'", $order_id ) );
         
         if ( empty( $results ) ) {
-            error_log( "Claim Desk Debug: No claimed items found for Order ID " . $order_id );
             // Check if ANY claims exist for this order
-            $check_claims = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table_claims} WHERE order_id = %d", $order_id ) );
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $query_claims = $wpdb->prepare( "SELECT * FROM {$this->table_claims} WHERE order_id = %d", $order_id );
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $check_claims = $wpdb->get_results( $query_claims );
+
             if ( ! empty( $check_claims ) ) {
-                 error_log( "Claim Desk Debug: Claims found in cd_claims table: " . print_r( $check_claims, true ) );
                  // Check items for first claim
-                 $first_claim_id = $check_claims[0]->id;
-                 $check_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table_items} WHERE claim_id = %d", $first_claim_id ) );
-                 error_log( "Claim Desk Debug: Items for Claim #$first_claim_id: " . print_r( $check_items, true ) );
-            } else {
-                 error_log( "Claim Desk Debug: No claims found in cd_claims table either." );
+                 $first_claim_id = (int) $check_claims[0]->id;
+
+                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                 $query_items = $wpdb->prepare( "SELECT * FROM {$this->table_items} WHERE claim_id = %d", $first_claim_id );
+
+                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                 $check_items = $wpdb->get_results( $query_items );
             }
-        } else {
-            error_log( "Claim Desk Debug: Claimed items found: " . print_r( $results, true ) );
         }
 
         return $results;
+    }
+
+    /**
+     * Save file attachment metadata.
+     * 
+     * @param array $data Attachment data (claim_id, file_path, file_name, file_type, file_size)
+     * @return int|false Attachment ID or false on failure.
+     */
+    public function save_attachment( $data ) {
+        global $wpdb;
+
+        $insert_data = array(
+            'claim_id'  => absint( $data['claim_id'] ),
+            'file_path' => sanitize_text_field( $data['file_path'] ),
+            'file_name' => sanitize_text_field( $data['file_name'] ),
+            'file_type' => sanitize_text_field( $data['file_type'] ),
+            'file_size' => absint( $data['file_size'] ),
+        );
+
+        $format = array( '%d', '%s', '%s', '%s', '%d' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $result = $wpdb->insert( $this->table_attachments, $insert_data, $format );
+
+        if ( $result ) {
+            return $wpdb->insert_id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get all attachments for a claim.
+     * 
+     * @param int $claim_id Claim ID
+     * @return array List of attachment objects
+     */
+    public function get_claim_attachments( $claim_id ) {
+        global $wpdb;
+
+        $claim_id = absint($claim_id);
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $query = $wpdb->prepare( "SELECT * FROM {$this->table_attachments} WHERE claim_id = %d ORDER BY uploaded_at ASC", $claim_id );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        return $wpdb->get_results( $query );
     }
 
 }
