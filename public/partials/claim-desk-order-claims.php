@@ -37,10 +37,12 @@ if ( empty( $claim_desk_conditions ) ) {
 			<?php
 			$has_available  = $claim_item['qty_available'] > 0;
 			$claim_status   = isset( $claim_item['claim_status'] ) ? sanitize_key( $claim_item['claim_status'] ) : '';
+			$window_allows_claims = ! empty( $claim_item['window_allows_claims'] );
+			$window_message = isset( $claim_item['window_message'] ) ? sanitize_text_field( $claim_item['window_message'] ) : '';
 			$badge_class    = 'is-not-eligible';
 			$badge_text     = __( 'Not Eligible', 'claim-desk' );
 			$locked_by_status = in_array( $claim_status, array( 'pending', 'approved', 'rejected' ), true );
-			$can_start_claim  = $has_available && ! $locked_by_status;
+			$can_start_claim  = $has_available && ! $locked_by_status && $window_allows_claims;
 
 			if ( 'pending' === $claim_status ) {
 				$badge_class = 'is-pending';
@@ -51,7 +53,7 @@ if ( empty( $claim_desk_conditions ) ) {
 			} elseif ( 'rejected' === $claim_status ) {
 				$badge_class = 'is-rejected';
 				$badge_text  = __( 'Rejected', 'claim-desk' );
-			} elseif ( $has_available ) {
+			} elseif ( $has_available && $window_allows_claims ) {
 				$badge_class = 'is-eligible';
 				$badge_text  = __( 'Eligible', 'claim-desk' );
 			}
@@ -114,6 +116,8 @@ if ( empty( $claim_desk_conditions ) ) {
 						<span class="cd-claim-row__notice--success"><?php esc_html_e( 'Claim approved by merchant.', 'claim-desk' ); ?></span>
 					<?php elseif ( 'rejected' === $claim_status ) : ?>
 						<span class="cd-claim-row__notice--error"><?php esc_html_e( 'Claim rejected by merchant.', 'claim-desk' ); ?></span>
+					<?php elseif ( ! $window_allows_claims && $window_message ) : ?>
+						<span class="cd-claim-row__notice--error"><?php echo esc_html( $window_message ); ?></span>
 					<?php elseif ( ! $has_available ) : ?>
 						<span class="cd-claim-row__notice--success"><?php esc_html_e( 'Claim already submitted for this product.', 'claim-desk' ); ?></span>
 					<?php endif; ?>

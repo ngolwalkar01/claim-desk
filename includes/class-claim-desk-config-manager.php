@@ -89,6 +89,38 @@ class Claim_Desk_Config_Manager {
     }
 
     /**
+     * Get claim window settings.
+     *
+     * @return array
+     */
+    public static function get_claim_window() {
+        $defaults = array(
+            'mode' => 'limited_days',
+            'days' => 30,
+        );
+
+        $settings = get_option( 'claim_desk_claim_window', $defaults );
+        if ( ! is_array( $settings ) ) {
+            return $defaults;
+        }
+
+        $mode = isset( $settings['mode'] ) ? sanitize_key( $settings['mode'] ) : $defaults['mode'];
+        if ( ! in_array( $mode, array( 'limited_days', 'no_limit', 'not_allowed' ), true ) ) {
+            $mode = $defaults['mode'];
+        }
+
+        $days = isset( $settings['days'] ) ? absint( $settings['days'] ) : $defaults['days'];
+        if ( $days < 1 ) {
+            $days = $defaults['days'];
+        }
+
+        return array(
+            'mode' => $mode,
+            'days' => $days,
+        );
+    }
+
+    /**
      * AJAX Handler: Save Configuration.
      */
     public function ajax_save_config() {
@@ -183,6 +215,34 @@ class Claim_Desk_Config_Manager {
             }
         }
 
+        // Save Claim Window
+        if ( isset( $_POST['claim_window'] ) ) {
+            // Read raw array safely, then sanitize values below.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $claim_window_raw = wp_unslash( $_POST['claim_window'] );
+            $claim_window     = array(
+                'mode' => 'limited_days',
+                'days' => 30,
+            );
+
+            if ( is_array( $claim_window_raw ) ) {
+                $mode = isset( $claim_window_raw['mode'] ) ? sanitize_key( (string) $claim_window_raw['mode'] ) : 'limited_days';
+                if ( ! in_array( $mode, array( 'limited_days', 'no_limit', 'not_allowed' ), true ) ) {
+                    $mode = 'limited_days';
+                }
+
+                $days = isset( $claim_window_raw['days'] ) ? absint( $claim_window_raw['days'] ) : 30;
+                if ( $days < 1 ) {
+                    $days = 1;
+                }
+
+                $claim_window['mode'] = $mode;
+                $claim_window['days'] = $days;
+            }
+
+            update_option( 'claim_desk_claim_window', $claim_window );
+        }
+
         wp_send_json_success( __( 'Configuration saved.', 'claim-desk' ) );
     }
 
@@ -196,7 +256,8 @@ class Claim_Desk_Config_Manager {
             'scopes'      => self::get_scopes(),
             'resolutions' => self::get_resolutions(),
             'problems'    => self::get_problems(),
-            'conditions'  => self::get_conditions()
+            'conditions'  => self::get_conditions(),
+            'claim_window' => self::get_claim_window(),
         );
 
         wp_send_json_success( $data );

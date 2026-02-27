@@ -104,6 +104,7 @@ class Claim_Desk_Public {
 
 		$claimed_map = $this->get_claimed_qty_map( $order->get_id() );
 		$status_map  = $this->get_claim_status_map( $order->get_id() );
+		$claim_window_status = $this->get_order_claim_window_status( $order );
 		$claim_items = array();
 
 		foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
@@ -127,6 +128,8 @@ class Claim_Desk_Public {
 				'qty_claimed'   => $claimed_qty,
 				'qty_available' => $available_qty,
 				'claim_status'  => isset( $status_map[ $item_id ] ) ? $status_map[ $item_id ] : '',
+				'window_allows_claims' => ! empty( $claim_window_status['allowed'] ),
+				'window_message'       => isset( $claim_window_status['message'] ) ? $claim_window_status['message'] : '',
 			);
 		}
 
@@ -200,6 +203,7 @@ class Claim_Desk_Public {
 
 		$claimed_map = $this->get_claimed_qty_map( $order_id );
 		$status_map  = $this->get_claim_status_map( $order_id );
+		$claim_window_status = $this->get_order_claim_window_status( $order );
 		$items_data  = array();
 
 		foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
@@ -223,6 +227,8 @@ class Claim_Desk_Public {
 				'qty_available' => $available_qty,
 				'image'         => $image_url,
 				'claim_status'  => isset( $status_map[ $item_id ] ) ? $status_map[ $item_id ] : '',
+				'window_allows_claims' => ! empty( $claim_window_status['allowed'] ),
+				'window_message'       => isset( $claim_window_status['message'] ) ? $claim_window_status['message'] : '',
 			);
 		}
 
@@ -277,6 +283,14 @@ class Claim_Desk_Public {
 
 		if ( $order->get_user_id() !== get_current_user_id() && ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_send_json_error( __( 'Permission denied.', 'claim-desk' ) );
+		}
+
+		$claim_window_status = $this->get_order_claim_window_status( $order );
+		if ( empty( $claim_window_status['allowed'] ) ) {
+			$error_message = isset( $claim_window_status['message'] ) && $claim_window_status['message']
+				? $claim_window_status['message']
+				: __( 'Claims are not allowed for this order.', 'claim-desk' );
+			wp_send_json_error( $error_message );
 		}
 
 		$order_item = $order->get_item( $order_item_id );
@@ -526,5 +540,77 @@ class Claim_Desk_Public {
 		}
 
 		return $status_map;
+	}
+
+	/**
+	 * Evaluate if claims are allowed for the order based on claim window config.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return array
+	 */
+	private function get_order_claim_window_status( $order ) {
+		$settings = Claim_Desk_Config_Manager::get_claim_window();
+		$mode     = isset( $settings['mode'] ) ? sanitize_key( $settings['mode'] ) : 'limited_days';
+		$days     = isset( $settings['days'] ) ? absint( $settings['days'] ) : 30;
+
+		if ( ! in_array( $mode, array( 'limited_days', 'no_limit', 'not_allowed' ), true ) ) {
+			$mode = 'limited_days';
+		}
+
+		if ( $days < 1 ) {
+			$days = 1;
+		}
+
+		if ( 'not_allowed' === $mode ) {
+			return array(
+				'allowed' => false,
+				'mode'    => $mode,
+				'days'    => $days,
+				'message' => __( 'Claims are currently not allowed.', 'claim-desk' ),
+			);
+		}
+
+		if ( 'no_limit' === $mode ) {
+			return array(
+				'allowed' => true,
+				'mode'    => $mode,
+				'days'    => $days,
+				'message' => '',
+			);
+		}
+
+		$completed_date = $order->get_date_completed();
+		if ( ! $completed_date ) {
+			return array(
+				'allowed' => false,
+				'mode'    => $mode,
+				'days'    => $days,
+				'message' => __( 'Claims are available after order completion.', 'claim-desk' ),
+			);
+		}
+
+		$completed_ts = absint( $completed_date->getTimestamp() );
+		$expiry_ts    = strtotime( '+' . $days . ' days', $completed_ts );
+		$current_ts   = current_time( 'timestamp', true );
+
+		if ( $expiry_ts && $current_ts > $expiry_ts ) {
+			return array(
+				'allowed' => false,
+				'mode'    => $mode,
+				'days'    => $days,
+				'message' => sprintf(
+					/* translators: %d: claim window days */
+					__( 'Claim window expired. Claims are allowed within %d days after order completion.', 'claim-desk' ),
+					$days
+				),
+			);
+		}
+
+		return array(
+			'allowed' => true,
+			'mode'    => $mode,
+			'days'    => $days,
+			'message' => '',
+		);
 	}
 }
