@@ -39,7 +39,7 @@ if ( empty( $claim_desk_conditions ) ) {
 			$claim_status   = isset( $claim_item['claim_status'] ) ? sanitize_key( $claim_item['claim_status'] ) : '';
 			$badge_class    = 'is-not-eligible';
 			$badge_text     = __( 'Not Eligible', 'claim-desk' );
-			$locked_by_status = in_array( $claim_status, array( 'pending', 'approved' ), true );
+			$locked_by_status = in_array( $claim_status, array( 'pending', 'approved', 'rejected' ), true );
 			$can_start_claim  = $has_available && ! $locked_by_status;
 
 			if ( 'pending' === $claim_status ) {
@@ -65,6 +65,7 @@ if ( empty( $claim_desk_conditions ) ) {
 				data-product-image="<?php echo esc_url( $claim_item['image'] ); ?>"
 				data-qty-available="<?php echo esc_attr( $claim_item['qty_available'] ); ?>"
 				data-claim-status="<?php echo esc_attr( $claim_status ); ?>"
+				data-can-claim="<?php echo $can_start_claim ? '1' : '0'; ?>"
 			>
 				<div class="cd-claim-row__product">
 					<img class="cd-claim-row__image" src="<?php echo esc_url( $claim_item['image'] ); ?>" alt="">

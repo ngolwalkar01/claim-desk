@@ -31,13 +31,25 @@
 				const $row = $( this ).closest( '.cd-claim-row' );
 				const qty = parseInt( $( this ).val(), 10 ) || 0;
 				const $button = $row.find( '.cd-start-claim' );
+				const canClaim = String( $row.attr( 'data-can-claim' ) || '0' ) === '1';
+
+				if ( ! canClaim ) {
+					$button.prop( 'disabled', true ).removeClass( 'is-active' );
+					return;
+				}
+
 				$button.prop( 'disabled', qty < 1 );
 				$button.toggleClass( 'is-active', qty > 0 );
 			} );
 
 			$( document ).on( 'click', '.cd-start-claim', function () {
 				const $row = $( this ).closest( '.cd-claim-row' );
+				const canClaim = String( $row.attr( 'data-can-claim' ) || '0' ) === '1';
 				const qty = parseInt( $row.find( '.cd-claim-qty' ).val(), 10 ) || 0;
+
+				if ( ! canClaim ) {
+					return;
+				}
 
 				if ( qty < 1 ) {
 					self.setRowNotice( $row, claim_desk_public.i18n.select_quantity, true );
@@ -293,6 +305,7 @@
 
 				self.setRowNotice( self.activeRow, response.data.message, false );
 				self.activeRow.addClass( 'is-claimed is-locked' );
+				self.activeRow.attr( 'data-can-claim', '0' );
 				self.activeRow.attr( 'data-claim-status', 'pending' );
 				self.activeRow.attr( 'data-qty-available', '0' );
 				self.activeRow.find( '.cd-claim-row__badges' ).html( '<span class="cd-status-badge is-pending">Already claimed waiting for the merchant response</span>' );
