@@ -6,6 +6,7 @@
 		activeRow: null,
 		activeData: {},
 		uploadedFiles: [],
+		previewObjectUrls: [],
 		lastFocused: null,
 
 		init: function () {
@@ -67,8 +68,22 @@
 				self.updateReview();
 			} );
 
+			$( document ).on( 'click', '.cd-claim-type-card', function () {
+				self.selectClaimType( $( this ) );
+			} );
+
+			$( document ).on( 'click', '#cd-open-image-upload', function () {
+				$( '#cd-claim-images' ).trigger( 'click' );
+			} );
+
 			$( document ).on( 'change', '#cd-claim-images', function ( event ) {
 				self.handleFiles( event.target.files );
+				$( this ).val( '' );
+			} );
+
+			$( document ).on( 'click', '.cd-claim-file-remove', function () {
+				const index = parseInt( $( this ).data( 'index' ), 10 );
+				self.removeFile( index );
 			} );
 
 			$( document ).on( 'click', '#cd-submit-claim', function () {
@@ -90,7 +105,7 @@
 			const $modal = $( '#cd-claim-modal' );
 			$modal.attr( 'aria-hidden', 'false' ).addClass( 'is-open' );
 			$( 'body' ).addClass( 'cd-modal-open' );
-			$( '#cd-claim-type' ).trigger( 'focus' );
+			$( '.cd-claim-type-card' ).first().trigger( 'focus' );
 		},
 
 		closeModal: function () {
@@ -98,6 +113,7 @@
 			$modal.attr( 'aria-hidden', 'true' ).removeClass( 'is-open' );
 			$( 'body' ).removeClass( 'cd-modal-open' );
 			this.clearModalError();
+			this.clearPreviewObjectUrls();
 
 			if ( this.lastFocused ) {
 				$( this.lastFocused ).trigger( 'focus' );
@@ -106,8 +122,10 @@
 
 		resetModalForm: function () {
 			this.uploadedFiles = [];
+			this.clearPreviewObjectUrls();
 
 			$( '#cd-claim-type' ).val( '' );
+			$( '.cd-claim-type-card' ).removeClass( 'is-selected' ).attr( 'aria-checked', 'false' );
 			$( '#cd-problem-type' ).val( '' );
 			$( '#cd-problem-description' ).val( '' );
 			$( '#cd-product-condition' ).val( '' );
@@ -117,19 +135,44 @@
 			this.clearModalError();
 		},
 
+		selectClaimType: function ( $card ) {
+			const value = String( $card.data( 'value' ) || '' );
+			if ( ! value ) {
+				return;
+			}
+
+			$( '.cd-claim-type-card' ).removeClass( 'is-selected' ).attr( 'aria-checked', 'false' );
+			$card.addClass( 'is-selected' ).attr( 'aria-checked', 'true' );
+			$( '#cd-claim-type' ).val( value ).trigger( 'change' );
+		},
+
 		handleFiles: function ( files ) {
 			const maxSize = 2 * 1024 * 1024;
 			const maxFiles = 5;
-			const nextFiles = [];
+			const nextFiles = this.uploadedFiles.slice();
 			let errorMessage = '';
 
 			Array.from( files ).forEach( function ( file ) {
 				if ( nextFiles.length >= maxFiles ) {
+					errorMessage = 'You can upload up to 5 images.';
+					return;
+				}
+
+				if ( file.type && file.type.indexOf( 'image/' ) !== 0 ) {
+					errorMessage = 'Only image files are allowed.';
 					return;
 				}
 
 				if ( file.size > maxSize ) {
 					errorMessage = file.name + ' exceeds 2MB.';
+					return;
+				}
+
+				const exists = nextFiles.some( function ( currentFile ) {
+					return currentFile.name === file.name && currentFile.size === file.size && currentFile.lastModified === file.lastModified;
+				} );
+
+				if ( exists ) {
 					return;
 				}
 
@@ -146,17 +189,42 @@
 
 		renderFilePreview: function () {
 			const $preview = $( '#cd-claim-files-preview' );
+			this.clearPreviewObjectUrls();
 			$preview.empty();
 
-			this.uploadedFiles.forEach( function ( file ) {
-				$preview.append( '<span class="cd-claim-file-tag">' + ClaimDeskProductFlow.escapeHtml( file.name ) + '</span>' );
+			this.uploadedFiles.forEach( function ( file, index ) {
+				const imageUrl = URL.createObjectURL( file );
+				ClaimDeskProductFlow.previewObjectUrls.push( imageUrl );
+				const html = '' +
+					'<div class="cd-claim-image-item">' +
+						'<button type="button" class="cd-claim-file-remove" data-index="' + index + '" aria-label="Remove image">&times;</button>' +
+						'<img src="' + imageUrl + '" alt="' + ClaimDeskProductFlow.escapeHtml( file.name ) + '" class="cd-claim-image-thumb">' +
+					'</div>';
+				$preview.append( html );
 			} );
 		},
 
+		removeFile: function ( index ) {
+			if ( Number.isNaN( index ) || index < 0 || index >= this.uploadedFiles.length ) {
+				return;
+			}
+
+			this.uploadedFiles.splice( index, 1 );
+			this.renderFilePreview();
+		},
+
+		clearPreviewObjectUrls: function () {
+			this.previewObjectUrls.forEach( function ( url ) {
+				URL.revokeObjectURL( url );
+			} );
+			this.previewObjectUrls = [];
+		},
+
 		updateReview: function () {
+			const claimTypeLabel = String( $( '.cd-claim-type-card.is-selected' ).data( 'label' ) || '-' );
 			$( '#cd-review-product' ).text( this.activeData.product_name || '-' );
 			$( '#cd-review-qty' ).text( this.activeData.quantity || '-' );
-			$( '#cd-review-claim-type' ).text( $( '#cd-claim-type option:selected' ).text() || '-' );
+			$( '#cd-review-claim-type' ).text( claimTypeLabel );
 			$( '#cd-review-problem' ).text( $( '#cd-problem-type option:selected' ).text() || '-' );
 			$( '#cd-review-condition' ).text( $( '#cd-product-condition option:selected' ).text() || '-' );
 			$( '#cd-review-refund' ).text( $( '#cd-refund-method option:selected' ).text() || '-' );

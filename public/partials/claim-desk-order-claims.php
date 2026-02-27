@@ -107,12 +107,38 @@ if ( empty( $claim_desk_conditions ) ) {
 
 			<div class="cd-claim-modal__body">
 				<div class="cd-form-row">
-					<label for="cd-claim-type"><?php esc_html_e( 'Claim Type', 'claim-desk' ); ?></label>
-					<select id="cd-claim-type" required>
-						<option value=""><?php esc_html_e( 'Select claim type', 'claim-desk' ); ?></option>
-						<option value="return"><?php esc_html_e( 'Return', 'claim-desk' ); ?></option>
-						<option value="exchange"><?php esc_html_e( 'Exchange', 'claim-desk' ); ?></option>
-					</select>
+					<label><?php esc_html_e( 'Select Claim Type', 'claim-desk' ); ?></label>
+					<input type="hidden" id="cd-claim-type" required>
+					<div class="cd-claim-type-cards" role="radiogroup" aria-label="<?php esc_attr_e( 'Select claim type', 'claim-desk' ); ?>">
+						<button
+							type="button"
+							class="cd-claim-type-card"
+							data-value="return"
+							data-label="<?php esc_attr_e( 'Return', 'claim-desk' ); ?>"
+							role="radio"
+							aria-checked="false"
+						>
+							<span class="cd-claim-type-card__icon" aria-hidden="true">&#8635;</span>
+							<span class="cd-claim-type-card__content">
+								<span class="cd-claim-type-card__title"><?php esc_html_e( 'Return', 'claim-desk' ); ?></span>
+								<span class="cd-claim-type-card__detail"><?php esc_html_e( 'Send item back and get your refund.', 'claim-desk' ); ?></span>
+							</span>
+						</button>
+						<button
+							type="button"
+							class="cd-claim-type-card"
+							data-value="exchange"
+							data-label="<?php esc_attr_e( 'Exchange', 'claim-desk' ); ?>"
+							role="radio"
+							aria-checked="false"
+						>
+							<span class="cd-claim-type-card__icon" aria-hidden="true">&#8644;</span>
+							<span class="cd-claim-type-card__content">
+								<span class="cd-claim-type-card__title"><?php esc_html_e( 'Exchange', 'claim-desk' ); ?></span>
+								<span class="cd-claim-type-card__detail"><?php esc_html_e( 'Replace with another unit or size.', 'claim-desk' ); ?></span>
+							</span>
+						</button>
+					</div>
 				</div>
 
 				<div class="cd-form-row">
@@ -128,6 +154,19 @@ if ( empty( $claim_desk_conditions ) ) {
 				<div class="cd-form-row">
 					<label for="cd-problem-description"><?php esc_html_e( 'Description', 'claim-desk' ); ?></label>
 					<textarea id="cd-problem-description" rows="4" required></textarea>
+				</div>
+
+				<div class="cd-form-row">
+					<label for="cd-claim-images"><?php esc_html_e( 'Upload Image', 'claim-desk' ); ?></label>
+					<input type="file" id="cd-claim-images" accept="image/*" multiple hidden>
+					<button type="button" class="cd-upload-card" id="cd-open-image-upload">
+						<span class="cd-upload-card__icon" aria-hidden="true">&#128247;</span>
+						<span class="cd-upload-card__content">
+							<span class="cd-upload-card__title"><?php esc_html_e( 'Choose images', 'claim-desk' ); ?></span>
+							<span class="cd-upload-card__detail"><?php esc_html_e( 'Upload clear photos of the issue. Up to 5 images, 2MB each.', 'claim-desk' ); ?></span>
+						</span>
+					</button>
+					<div id="cd-claim-files-preview" class="cd-claim-files-preview"></div>
 				</div>
 
 				<div class="cd-form-row">
@@ -148,12 +187,6 @@ if ( empty( $claim_desk_conditions ) ) {
 						<option value="store-credit"><?php esc_html_e( 'Store Credit', 'claim-desk' ); ?></option>
 						<option value="bank-transfer"><?php esc_html_e( 'Bank Transfer', 'claim-desk' ); ?></option>
 					</select>
-				</div>
-
-				<div class="cd-form-row">
-					<label for="cd-claim-images"><?php esc_html_e( 'Upload Images', 'claim-desk' ); ?></label>
-					<input type="file" id="cd-claim-images" accept="image/*" multiple>
-					<div id="cd-claim-files-preview" class="cd-claim-files-preview"></div>
 				</div>
 
 				<div class="cd-claim-review">
