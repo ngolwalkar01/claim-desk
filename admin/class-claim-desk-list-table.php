@@ -25,6 +25,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
             'cb'          => '<input type="checkbox" />',
             'id'          => __( 'Claim ID', 'claim-desk' ),
             'order'       => __( 'Order', 'claim-desk' ),
+            'product_id'  => __( 'Product ID', 'claim-desk' ),
+            'product_sku' => __( 'Product SKU', 'claim-desk' ),
             'type_slug'   => __( 'Type', 'claim-desk' ),
             'status'      => __( 'Status', 'claim-desk' ),
             'created_at'  => __( 'Date', 'claim-desk' ),
@@ -43,7 +45,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
     public function prepare_items() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'cd_claims';
+        $table_name  = $wpdb->prefix . 'cd_claims';
+        $table_items = $wpdb->prefix . 'cd_claim_items';
         
         $per_page = 20;
         $current_page = $this->get_pagenum();
@@ -66,6 +69,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
         // Query
         // Count total items
         $table_name  = esc_sql( $table_name );
+        $table_items = esc_sql( $table_items );
         $cache_key_total = 'cd_claims_total_count';
         $total_items = wp_cache_get( $cache_key_total, 'claim-desk' );
 
@@ -88,7 +92,21 @@ class Claim_Desk_List_Table extends WP_List_Table {
         if ( false === $items ) {
             // WordPress prepare() cannot safely quote 'ORDER BY column_name' dynamically, so we must interpolate the sanitized variables and prepare the limits.
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table_name} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", $per_page, $offset ) );
+            $items = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT c.*, ci.product_id
+                    FROM {$table_name} c
+                    LEFT JOIN (
+                        SELECT claim_id, MAX(product_id) AS product_id
+                        FROM {$table_items}
+                        GROUP BY claim_id
+                    ) ci ON ci.claim_id = c.id
+                    ORDER BY c.{$orderby} {$order}
+                    LIMIT %d OFFSET %d",
+                    $per_page,
+                    $offset
+                )
+            );
             wp_cache_set( $cache_key_items, $items, 'claim-desk', 300 );
         }
 
@@ -121,6 +139,30 @@ class Claim_Desk_List_Table extends WP_List_Table {
     public function column_type_slug( $item ) {
         // Map slug to Label if possible (requires config manager)
         return esc_html(ucfirst( $item->type_slug ));
+    }
+
+    public function column_product_id( $item ) {
+        $product_id = isset( $item->product_id ) ? absint( $item->product_id ) : 0;
+        if ( ! $product_id ) {
+            return '&mdash;';
+        }
+
+        return '#' . esc_html( $product_id );
+    }
+
+    public function column_product_sku( $item ) {
+        $product_id = isset( $item->product_id ) ? absint( $item->product_id ) : 0;
+        if ( ! $product_id ) {
+            return '&mdash;';
+        }
+
+        $product = wc_get_product( $product_id );
+        if ( ! $product ) {
+            return '&mdash;';
+        }
+
+        $sku = $product->get_sku();
+        return $sku ? esc_html( $sku ) : '&mdash;';
     }
 
     public function column_status( $item ) {
