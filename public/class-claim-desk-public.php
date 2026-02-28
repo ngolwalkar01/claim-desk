@@ -148,10 +148,27 @@ class Claim_Desk_Public {
 	 * @return array
 	 */
 	public function add_order_action_button( $actions, $order ) {
-		$actions['claim-desk-trigger'] = array(
+		if ( ! $order instanceof WC_Order ) {
+			return $actions;
+		}
+
+		$claim_window_status = $this->get_order_claim_window_status( $order );
+		$message             = isset( $claim_window_status['message'] ) ? (string) $claim_window_status['message'] : '';
+
+		if ( ! empty( $claim_window_status['allowed'] ) ) {
+			$actions['claim-desk-trigger'] = array(
+				'url'    => $order->get_view_order_url() . '#cd-order-claims',
+				'name'   => __( 'Start Claim', 'claim-desk' ),
+				'action' => 'claim-desk-trigger',
+			);
+			return $actions;
+		}
+
+		unset( $actions['claim-desk-trigger'] );
+		$actions['claim-desk-trigger-info'] = array(
 			'url'    => $order->get_view_order_url() . '#cd-order-claims',
-			'name'   => __( 'Start Claim', 'claim-desk' ),
-			'action' => 'claim-desk-trigger',
+			'name'   => $message ? $message : __( 'Claims can be created only after the order is delivered.', 'claim-desk' ),
+			'action' => 'claim-desk-trigger-info',
 		);
 
 		return $actions;
@@ -549,6 +566,16 @@ class Claim_Desk_Public {
 	 * @return array
 	 */
 	private function get_order_claim_window_status( $order ) {
+		$order_status_check = $this->get_order_claim_status_check( $order );
+		if ( empty( $order_status_check['allowed'] ) ) {
+			return array(
+				'allowed' => false,
+				'mode'    => 'order_status',
+				'days'    => 0,
+				'message' => isset( $order_status_check['message'] ) ? $order_status_check['message'] : __( 'Claims can be created only after the order is delivered.', 'claim-desk' ),
+			);
+		}
+
 		$settings = Claim_Desk_Config_Manager::get_claim_window();
 		$mode     = isset( $settings['mode'] ) ? sanitize_key( $settings['mode'] ) : 'limited_days';
 		$days     = isset( $settings['days'] ) ? absint( $settings['days'] ) : 30;
@@ -611,6 +638,35 @@ class Claim_Desk_Public {
 			'mode'    => $mode,
 			'days'    => $days,
 			'message' => '',
+		);
+	}
+
+	/**
+	 * Check whether order status allows claim creation.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return array
+	 */
+	private function get_order_claim_status_check( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return array(
+				'allowed' => false,
+				'message' => __( 'Claims can be created only after the order is delivered.', 'claim-desk' ),
+			);
+		}
+
+		$status = sanitize_key( $order->get_status() );
+		$allowed_statuses = apply_filters( 'claim_desk_claim_start_order_statuses', array( 'completed', 'delivered' ), $order );
+		if ( ! is_array( $allowed_statuses ) ) {
+			$allowed_statuses = array( 'completed', 'delivered' );
+		}
+
+		$normalized_statuses = array_map( 'sanitize_key', $allowed_statuses );
+		$is_allowed          = in_array( $status, $normalized_statuses, true );
+
+		return array(
+			'allowed' => $is_allowed,
+			'message' => $is_allowed ? '' : __( 'Claims can be created only after the order is delivered.', 'claim-desk' ),
 		);
 	}
 }
