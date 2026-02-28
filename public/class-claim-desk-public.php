@@ -153,22 +153,15 @@ class Claim_Desk_Public {
 		}
 
 		$claim_window_status = $this->get_order_claim_window_status( $order );
+		$is_allowed          = ! empty( $claim_window_status['allowed'] );
 		$message             = isset( $claim_window_status['message'] ) ? (string) $claim_window_status['message'] : '';
 
-		if ( ! empty( $claim_window_status['allowed'] ) ) {
-			$actions['claim-desk-trigger'] = array(
-				'url'    => $order->get_view_order_url() . '#cd-order-claims',
-				'name'   => __( 'Start Claim', 'claim-desk' ),
-				'action' => 'claim-desk-trigger',
-			);
-			return $actions;
-		}
-
-		unset( $actions['claim-desk-trigger'] );
-		$actions['claim-desk-trigger-info'] = array(
-			'url'    => $order->get_view_order_url() . '#cd-order-claims',
-			'name'   => $message ? $message : __( 'Claims can be created only after the order is delivered.', 'claim-desk' ),
-			'action' => 'claim-desk-trigger-info',
+		$actions['claim-desk-trigger'] = array(
+			'url'    => $is_allowed ? $order->get_view_order_url() . '#cd-order-claims' : '#',
+			'name'   => $is_allowed
+				? __( 'Start Claim', 'claim-desk' )
+				: ( $message ? $message : __( 'Claims can be created only after the order is delivered.', 'claim-desk' ) ),
+			'action' => $is_allowed ? 'claim-desk-trigger' : 'claim-desk-trigger-disabled',
 		);
 
 		return $actions;
@@ -656,17 +649,42 @@ class Claim_Desk_Public {
 		}
 
 		$status = sanitize_key( $order->get_status() );
-		$allowed_statuses = apply_filters( 'claim_desk_claim_start_order_statuses', array( 'completed', 'delivered' ), $order );
-		if ( ! is_array( $allowed_statuses ) ) {
-			$allowed_statuses = array( 'completed', 'delivered' );
-		}
+		$is_allowed = ( 'completed' === $status );
+		$message    = '';
 
-		$normalized_statuses = array_map( 'sanitize_key', $allowed_statuses );
-		$is_allowed          = in_array( $status, $normalized_statuses, true );
+		if ( ! $is_allowed ) {
+			switch ( $status ) {
+				case 'pending':
+				case 'pending-payment':
+					$message = __( 'Your order is awaiting payment. Claims can be created after the order is paid and delivered.', 'claim-desk' );
+					break;
+				case 'processing':
+					$message = __( 'Your order is being prepared for shipment. Claims can be created after delivery.', 'claim-desk' );
+					break;
+				case 'on-hold':
+					$message = __( 'Your order is currently on hold. Claims will be available once the order is processed and delivered.', 'claim-desk' );
+					break;
+				case 'cancelled':
+					$message = __( 'This order has been cancelled. Claims are not available for cancelled orders.', 'claim-desk' );
+					break;
+				case 'refunded':
+					$message = __( 'This order has already been refunded. No further claims can be created.', 'claim-desk' );
+					break;
+				case 'failed':
+					$message = __( 'This order was not successfully processed. Claims are not available for failed orders.', 'claim-desk' );
+					break;
+				case 'draft':
+					$message = __( 'This order is still in draft state. Claims will be available once the order is completed.', 'claim-desk' );
+					break;
+				default:
+					$message = __( 'Claims can be created only after the order is delivered.', 'claim-desk' );
+					break;
+			}
+		}
 
 		return array(
 			'allowed' => $is_allowed,
-			'message' => $is_allowed ? '' : __( 'Claims can be created only after the order is delivered.', 'claim-desk' ),
+			'message' => $message,
 		);
 	}
 }
