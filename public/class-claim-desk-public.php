@@ -8,7 +8,6 @@
  * @subpackage Claim_Desk/public
  */
 
-// If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
 	die;
 }
@@ -16,446 +15,700 @@ if ( ! defined( 'WPINC' ) ) {
 class Claim_Desk_Public {
 
 	/**
-	 * The ID of this plugin.
+	 * Plugin name.
 	 *
-	 * @since    1.0.0
-	 * @access   private
-	 * @var      string    $plugin_name    The ID of this plugin.
+	 * @var string
 	 */
 	private $plugin_name;
 
 	/**
-	 * The version of this plugin.
+	 * Plugin version.
 	 *
-	 * @since    1.0.0
-	 * @access   private
-	 * @var      string    $version    The current version of this plugin.
+	 * @var string
 	 */
 	private $version;
 
 	/**
-	 * Initialize the class and set its properties.
+	 * Constructor.
 	 *
-	 * @since    1.0.0
-	 * @param    string    $plugin_name       The name of the plugin.
-	 * @param    string    $version           The version of this plugin.
+	 * @param string $plugin_name Plugin name.
+	 * @param string $version Plugin version.
 	 */
 	public function __construct( $plugin_name, $version ) {
-
 		$this->plugin_name = $plugin_name;
-		$this->version = $version;
-
+		$this->version     = $version;
 	}
 
 	/**
-	 * Register the stylesheets for the public-facing side of the site.
-	 *
-	 * @since    1.0.0
+	 * Enqueue public styles.
 	 */
 	public function enqueue_styles() {
-
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/claim-desk-public.css', array(), $this->version, 'all' );
-
+		$style_path = plugin_dir_path( __FILE__ ) . 'css/claim-desk-public.css';
+		$style_ver  = file_exists( $style_path ) ? (string) filemtime( $style_path ) : $this->version;
+		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/claim-desk-public.css', array(), $style_ver, 'all' );
 	}
 
 	/**
-	 * Register the JavaScript for the public-facing side of the site.
-	 *
-	 * @since    1.0.0
+	 * Enqueue public scripts.
 	 */
 	public function enqueue_scripts() {
+		$script_path = plugin_dir_path( __FILE__ ) . 'js/claim-desk-public.js';
+		$script_ver  = file_exists( $script_path ) ? (string) filemtime( $script_path ) : $this->version;
+		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/claim-desk-public.js', array( 'jquery' ), $script_ver, true );
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/claim-desk-public.js', array( 'jquery', 'wp-util' ), $this->version, false );
-
-        // Localize
-        wp_localize_script( $this->plugin_name, 'claim_desk_public', array(
-            'ajax_url'    => admin_url( 'admin-ajax.php' ),
-            'nonce'       => wp_create_nonce( 'claim_desk_public_nonce' ),
-            'scopes'      => Claim_Desk_Config_Manager::get_scopes(),
-            'resolutions' => Claim_Desk_Config_Manager::get_resolutions(),
-            'problems'    => Claim_Desk_Config_Manager::get_problems(),
-            'conditions'  => Claim_Desk_Config_Manager::get_conditions()
-        ));
-
+		wp_localize_script(
+			$this->plugin_name,
+			'claim_desk_public',
+			array(
+				'ajax_url'   => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'claim_desk_public_nonce' ),
+				'problems'   => Claim_Desk_Config_Manager::get_problems(),
+				'conditions' => Claim_Desk_Config_Manager::get_conditions(),
+				'i18n'       => array(
+					'loading'         => __( 'Submitting...', 'claim-desk' ),
+					'submit'          => __( 'Submit Claim', 'claim-desk' ),
+					'server_error'    => __( 'Server error. Please try again.', 'claim-desk' ),
+					'select_quantity' => __( 'Please select a quantity first.', 'claim-desk' ),
+				),
+			)
+		);
 	}
 
-    /**
-     * Initialize hooks.
-     */
-    public function init() {
-        add_action( 'wp_ajax_claim_desk_get_order_items', array( $this, 'ajax_get_order_items' ) );
-        add_action( 'wp_ajax_nopriv_claim_desk_get_order_items', array( $this, 'ajax_get_order_items' ) );
-        
-        add_action( 'wp_ajax_claim_desk_submit_claim', array( $this, 'ajax_submit_claim' ) );
-        add_action( 'wp_ajax_nopriv_claim_desk_submit_claim', array( $this, 'ajax_submit_claim' ) );
-    }
+	/**
+	 * Register AJAX actions.
+	 */
+	public function init() {
+		add_action( 'wp_ajax_claim_desk_get_order_items', array( $this, 'ajax_get_order_items' ) );
+		add_action( 'wp_ajax_nopriv_claim_desk_get_order_items', array( $this, 'ajax_get_order_items' ) );
+		add_action( 'wp_ajax_claim_desk_submit_claim', array( $this, 'ajax_submit_claim' ) );
+		add_action( 'wp_ajax_nopriv_claim_desk_submit_claim', array( $this, 'ajax_submit_claim' ) );
+	}
 
-    /**
-     * AJAX: Submit a new claim.
-     */
-    public function ajax_submit_claim() {
-        check_ajax_referer( 'claim_desk_public_nonce', 'nonce' );
+	/**
+	 * Render per-product claim interface on order details.
+	 *
+	 * @param WC_Order|int $order Order object or ID.
+	 */
+	public function render_order_claim_interface( $order ) {
+		if ( is_numeric( $order ) ) {
+			$order = wc_get_order( absint( $order ) );
+		}
 
-        // Read + sanitize scalar inputs.
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-        $order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-        $scope    = isset( $_POST['scope'] ) ? sanitize_key( wp_unslash( $_POST['scope'] ) ) : '';
+		if ( ! $order instanceof WC_Order ) {
+			return;
+		}
 
-        // Read raw JSON strings, decode, then sanitize decoded structures.
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-        $items_raw = isset( $_POST['items'] ) ? (string) wp_unslash( $_POST['items'] ) : '';
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-        $form_data_raw = isset( $_POST['form_data'] ) ? (string) wp_unslash( $_POST['form_data'] ) : '';
+		if ( $order->get_user_id() !== get_current_user_id() && ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
 
-        $items_decoded = $items_raw !== '' ? json_decode( $items_raw, true ) : array();
-        $form_data_decoded = $form_data_raw !== '' ? json_decode( $form_data_raw, true ) : array();
+		$claimed_map = $this->get_claimed_qty_map( $order->get_id() );
+		$status_map  = $this->get_claim_status_map( $order->get_id() );
+		$claim_window_status = $this->get_order_claim_window_status( $order );
+		$claim_items = array();
 
-        $items = array();
-        if ( is_array( $items_decoded ) ) {
-            foreach ( $items_decoded as $item_id => $qty ) {
-                $item_id = absint( $item_id );
-                $qty     = absint( $qty );
-                if ( $item_id > 0 && $qty > 0 ) {
-                    $items[ $item_id ] = $qty;
-                }
-            }
-        }
+		foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
+			$product = $item->get_product();
+			if ( ! $product ) {
+				continue;
+			}
 
-        $form_data = array();
-        if ( is_array( $form_data_decoded ) ) {
-            foreach ( $form_data_decoded as $field ) {
-                if ( ! is_array( $field ) || ! isset( $field['name'] ) ) {
-                    continue;
-                }
+			$total_qty     = absint( $item->get_quantity() );
+			$claimed_qty   = isset( $claimed_map[ $item_id ] ) ? absint( $claimed_map[ $item_id ] ) : 0;
+			$available_qty = max( 0, $total_qty - $claimed_qty );
+			$image_id      = $product->get_image_id();
+			$image_url     = $image_id ? wp_get_attachment_image_url( $image_id, 'thumbnail' ) : wc_placeholder_img_src();
 
-                $name = sanitize_key( (string) $field['name'] );
-                $value = isset( $field['value'] ) ? $field['value'] : '';
+			$claim_items[] = array(
+				'order_item_id' => absint( $item_id ),
+				'product_id'    => absint( $item->get_product_id() ),
+				'name'          => $item->get_name(),
+				'image'         => $image_url,
+				'qty_total'     => $total_qty,
+				'qty_claimed'   => $claimed_qty,
+				'qty_available' => $available_qty,
+				'claim_status'  => isset( $status_map[ $item_id ] ) ? $status_map[ $item_id ] : '',
+				'window_allows_claims' => ! empty( $claim_window_status['allowed'] ),
+				'window_message'       => isset( $claim_window_status['message'] ) ? $claim_window_status['message'] : '',
+			);
+		}
 
-                if ( is_array( $value ) ) {
-                    $value = wp_json_encode( $value );
-                }
+		if ( empty( $claim_items ) ) {
+			return;
+		}
 
-                $form_data[] = array(
-                    'name'  => $name,
-                    'value' => sanitize_text_field( (string) $value ),
-                );
-            }
-        }
+		require plugin_dir_path( __FILE__ ) . 'partials/claim-desk-order-claims.php';
+	}
 
-        // 1. Validation
-        if ( ! $order_id || ! $scope || empty( $items ) ) {
-            wp_send_json_error( __( 'Missing required data (Order, Scope, or Items).', 'claim-desk' ) );
-        }
+	/**
+	 * Add claim action link in orders table.
+	 *
+	 * @param array    $actions Action list.
+	 * @param WC_Order $order Order object.
+	 * @return array
+	 */
+	public function add_order_action_button( $actions, $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return $actions;
+		}
 
-        $order = wc_get_order( $order_id );
-        if ( ! $order ) {
-            wp_send_json_error( __( 'Order not found.', 'claim-desk' ) );
-        }
+		$claim_window_status = $this->get_order_claim_window_status( $order );
+		$is_allowed          = ! empty( $claim_window_status['allowed'] );
+		$message             = isset( $claim_window_status['message'] ) ? (string) $claim_window_status['message'] : '';
 
-        // Check ownership
-        if ( $order->get_user_id() !== get_current_user_id() && ! current_user_can( 'manage_woocommerce' ) ) {
-            wp_send_json_error( __( 'Permission denied.', 'claim-desk' ) );
-        }
+		$actions['claim-desk-trigger'] = array(
+			'url'    => $is_allowed ? $order->get_view_order_url() . '#cd-order-claims' : '#',
+			'name'   => $is_allowed
+				? __( 'Start Claim', 'claim-desk' )
+				: ( $message ? $message : __( 'Claims can be created only after the order is delivered.', 'claim-desk' ) ),
+			'action' => $is_allowed ? 'claim-desk-trigger' : 'claim-desk-trigger-disabled',
+		);
 
-        // 2. Prepare Data for Insertion
-        $db = new Claim_Desk_DB_Handler();
+		return $actions;
+	}
 
-        // Create Header
-        $claim_id = $db->create_claim( array(
-            'order_id' => $order_id,
-            'user_id'  => get_current_user_id(),
-            'type_slug' => $scope,
-            'status'   => 'pending' 
-        ));
+	/**
+	 * Backward-compatible shortcode output.
+	 *
+	 * @param array $atts Shortcode attrs.
+	 * @return string
+	 */
+	public function render_wizard( $atts ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$order_id = isset( $_GET['order_id'] ) ? absint( wp_unslash( $_GET['order_id'] ) ) : 0;
+		if ( ! $order_id ) {
+			return '<p>' . esc_html__( 'Please open a valid order to submit a claim.', 'claim-desk' ) . '</p>';
+		}
 
-        if ( ! $claim_id ) {
-            wp_send_json_error( __( 'Failed to create claim record.', 'claim-desk' ) );
-        }
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return '<p>' . esc_html__( 'Order not found.', 'claim-desk' ) . '</p>';
+		}
 
-        // Create Items
-        foreach ( $items as $item_id => $qty ) {
-            $item_id = intval($item_id); // Order Item ID (line item id)
-            $qty = intval($qty);
+		ob_start();
+		$this->render_order_claim_interface( $order );
+		return ob_get_clean();
+	}
 
-            // Fetch product ID from order item
-            $order_item = $order->get_item( $item_id );
-            
-            // Safety check if item belongs to order
-            if ( ! $order_item ) continue; 
+	/**
+	 * AJAX: Fetch order items and available claim quantities.
+	 */
+	public function ajax_get_order_items() {
+		check_ajax_referer( 'claim_desk_public_nonce', 'nonce' );
 
-            $product_id = $order_item->get_product_id();
-            $qty_total = $order_item->get_quantity();
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+		if ( ! $order_id ) {
+			wp_send_json_error( __( 'Invalid order ID.', 'claim-desk' ) );
+		}
 
-            // Extract reason from form data? 
-            // In our simple form, we might have one reason for the whole claim OR per item?
-            // The step 3 UI has a single Reason radio.
-            // Let's assume the single reason applies to all selected items for this MVP,
-            // OR we store it in dynamic_data.
-            // The table `wp_cd_claim_items` has `reason_slug`.
-            
-            // Extract single reason for now
-            $reason_slug = '';
-            foreach($form_data as $field) {
-                if($field['name'] === 'claim_reason') {
-                    $reason_slug = sanitize_key($field['value']);
-                    break;
-                }
-            }
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			wp_send_json_error( __( 'Order not found.', 'claim-desk' ) );
+		}
 
-            // Collect other dynamic fields into JSON
-            // e.g. batch_number, description
-            $dynamic_fields = array();
-            foreach($form_data as $field) {
-                if($field['name'] !== 'claim_reason') {
-                    $dynamic_fields[$field['name']] = sanitize_text_field($field['value']);
-                }
-            }
+		if ( $order->get_user_id() !== get_current_user_id() && ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( __( 'Permission denied.', 'claim-desk' ) );
+		}
 
-            $db->create_claim_item( array(
-                'claim_id'      => $claim_id,
-                'order_item_id' => $item_id,
-                'product_id'    => $product_id,
-                'qty_total'     => $qty_total,
-                'qty_claimed'   => $qty,
-                'reason_slug'   => $reason_slug,
-                'dynamic_data'  => wp_json_encode( $dynamic_fields )
-            ));
-        }
+		$claimed_map = $this->get_claimed_qty_map( $order_id );
+		$status_map  = $this->get_claim_status_map( $order_id );
+		$claim_window_status = $this->get_order_claim_window_status( $order );
+		$items_data  = array();
 
-        // 3. Handle File Uploads
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-        if ( ! empty( $_FILES['files'] ) ) {
-            require_once( ABSPATH . 'wp-admin/includes/file.php' );
+		foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
+			$product = $item->get_product();
+			if ( ! $product ) {
+				continue;
+			}
 
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            $files = $_FILES['files'];
-            $file_count = count( $files['name'] );
+			$original_qty  = absint( $item->get_quantity() );
+			$claimed_qty   = isset( $claimed_map[ $item_id ] ) ? absint( $claimed_map[ $item_id ] ) : 0;
+			$available_qty = max( 0, $original_qty - $claimed_qty );
+			$image_id      = $product->get_image_id();
+			$image_url     = $image_id ? wp_get_attachment_image_url( $image_id, 'thumbnail' ) : wc_placeholder_img_src();
 
-            // Limit to 5 files
-            if ( $file_count > 5 ) {
-                wp_send_json_error( __( 'Maximum 5 files allowed.', 'claim-desk' ) );
-            }
+			$items_data[] = array(
+				'id'            => absint( $item_id ),
+				'product_id'    => absint( $item->get_product_id() ),
+				'name'          => $item->get_name(),
+				'qty'           => $original_qty,
+				'qty_claimed'   => $claimed_qty,
+				'qty_available' => $available_qty,
+				'image'         => $image_url,
+				'claim_status'  => isset( $status_map[ $item_id ] ) ? $status_map[ $item_id ] : '',
+				'window_allows_claims' => ! empty( $claim_window_status['allowed'] ),
+				'window_message'       => isset( $claim_window_status['message'] ) ? $claim_window_status['message'] : '',
+			);
+		}
 
-            // Allowed file types
-            $allowed_types = array( 'jpg', 'jpeg', 'png', 'gif', 'webp' );
-            $allowed_mimes = array(
-                'image/jpeg',
-                'image/jpg',
-                'image/png',
-                'image/gif',
-                'image/webp'
-            );
+		wp_send_json_success( array( 'items' => $items_data ) );
+	}
 
-            for ( $i = 0; $i < $file_count; $i++ ) {
-                // Skip empty files
-                if ( empty( $files['name'][$i] ) ) {
-                    continue;
-                }
+	/**
+	 * AJAX: Submit one independent product claim.
+	 */
+	public function ajax_submit_claim() {
+		check_ajax_referer( 'claim_desk_public_nonce', 'nonce' );
 
-                // Check file size (2MB max)
-                if ( $files['size'][$i] > 2097152 ) {
-                    wp_send_json_error( __( 'File size must not exceed 2MB.', 'claim-desk' ) );
-                }
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$order_item_id = isset( $_POST['order_item_id'] ) ? absint( wp_unslash( $_POST['order_item_id'] ) ) : 0;
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$product_id = isset( $_POST['product_id'] ) ? absint( wp_unslash( $_POST['product_id'] ) ) : 0;
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$quantity = isset( $_POST['quantity'] ) ? absint( wp_unslash( $_POST['quantity'] ) ) : 0;
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$claim_type = isset( $_POST['claim_type'] ) ? sanitize_key( wp_unslash( $_POST['claim_type'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$problem_type = isset( $_POST['problem_type'] ) ? sanitize_key( wp_unslash( $_POST['problem_type'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$description = isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$product_condition = isset( $_POST['product_condition'] ) ? sanitize_key( wp_unslash( $_POST['product_condition'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$refund_method = isset( $_POST['refund_method'] ) ? sanitize_key( wp_unslash( $_POST['refund_method'] ) ) : '';
 
-                // Prepare file array for wp_handle_upload
-                $file = array(
-                    'name'     => $files['name'][$i],
-                    'type'     => $files['type'][$i],
-                    'tmp_name' => $files['tmp_name'][$i],
-                    'error'    => $files['error'][$i],
-                    'size'     => $files['size'][$i]
-                );
+		if ( ! $order_id || ! $order_item_id || ! $product_id || $quantity < 1 ) {
+			wp_send_json_error( __( 'Missing required claim data.', 'claim-desk' ) );
+		}
 
-                // Validate file type and extension
-                $filetype = wp_check_filetype_and_ext( $file['tmp_name'], $file['name'] );
-                $ext = $filetype['ext'];
-                $type = $filetype['type'];
+		$enabled_claim_types = $this->get_enabled_claim_types();
+		if ( ! in_array( $claim_type, $enabled_claim_types, true ) ) {
+			wp_send_json_error( __( 'Invalid claim type.', 'claim-desk' ) );
+		}
 
-                // Check if extension and MIME type are allowed
-                if ( ! in_array( $ext, $allowed_types ) || ! in_array( $type, $allowed_mimes ) ) {
-                    wp_send_json_error( __( 'Invalid file type. Only JPG, PNG, GIF, and WEBP images are allowed.', 'claim-desk' ) );
-                }
+		if ( '' === $problem_type || '' === $description || '' === $refund_method ) {
+			wp_send_json_error( __( 'Please complete all required fields.', 'claim-desk' ) );
+		}
 
-                // Upload file
-                $upload_overrides = array(
-                    'test_form' => false,
-                    'mimes'     => array(
-                        'jpg|jpeg|jpe' => 'image/jpeg',
-                        'png'          => 'image/png',
-                        'gif'          => 'image/gif',
-                        'webp'         => 'image/webp'
-                    )
-                );
+		if ( '' === $product_condition ) {
+			$product_condition = 'not-specified';
+		}
 
-                $uploaded_file = wp_handle_upload( $file, $upload_overrides );
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			wp_send_json_error( __( 'Order not found.', 'claim-desk' ) );
+		}
 
-                if ( isset( $uploaded_file['error'] ) ) {
-                    wp_send_json_error( $uploaded_file['error'] );
-                }
+		if ( $order->get_user_id() !== get_current_user_id() && ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( __( 'Permission denied.', 'claim-desk' ) );
+		}
 
-                // Save attachment metadata to database
-                $upload_dir = wp_upload_dir();
-                $relative_path = str_replace( $upload_dir['basedir'], '', $uploaded_file['file'] );
+		$claim_window_status = $this->get_order_claim_window_status( $order );
+		if ( empty( $claim_window_status['allowed'] ) ) {
+			$error_message = isset( $claim_window_status['message'] ) && $claim_window_status['message']
+				? $claim_window_status['message']
+				: __( 'Claims are not allowed for this order.', 'claim-desk' );
+			wp_send_json_error( $error_message );
+		}
 
-                $db->save_attachment( array(
-                    'claim_id'  => $claim_id,
-                    'file_path' => $relative_path,
-                    'file_name' => basename( $uploaded_file['file'] ),
-                    'file_type' => $uploaded_file['type'],
-                    'file_size' => filesize( $uploaded_file['file'] )
-                ));
-            }
-        }
+		$order_item = $order->get_item( $order_item_id );
+		if ( ! $order_item ) {
+			wp_send_json_error( __( 'Order item not found.', 'claim-desk' ) );
+		}
 
-        wp_send_json_success( array(
-            'message' => __( 'Claim submitted successfully!', 'claim-desk' ),
-            'claim_id' => $claim_id
-        ));
-    }
+		if ( absint( $order_item->get_product_id() ) !== $product_id ) {
+			wp_send_json_error( __( 'Product mismatch for selected order item.', 'claim-desk' ) );
+		}
 
-    /**
-     * AJAX: Fetch order items for the modal logic.
-     */
-    /**
-     * AJAX: Fetch order items for the modal logic.
-     */
-    public function ajax_get_order_items() {
-        check_ajax_referer( 'claim_desk_public_nonce', 'nonce' );
+		$claimed_map    = $this->get_claimed_qty_map( $order_id );
+		$item_total_qty = absint( $order_item->get_quantity() );
+		$item_claimed   = isset( $claimed_map[ $order_item_id ] ) ? absint( $claimed_map[ $order_item_id ] ) : 0;
+		$item_available = max( 0, $item_total_qty - $item_claimed );
 
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-        $order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
-        if ( ! $order_id ) {
-            wp_send_json_error( __( 'Invalid Order ID', 'claim-desk' ) );
-        }
+		if ( $quantity > $item_available ) {
+			wp_send_json_error( __( 'Selected quantity exceeds available claim quantity.', 'claim-desk' ) );
+		}
 
-        // Verify user permission (must be owner of order or admin)
-        $order = wc_get_order( $order_id );
-        if ( ! $order ) {
-            wp_send_json_error( __( 'Order not found', 'claim-desk' ) );
-        }
+		$db = new Claim_Desk_DB_Handler();
 
-        if ( $order->get_user_id() !== get_current_user_id() && ! current_user_can( 'manage_woocommerce' ) ) {
-            wp_send_json_error( __( 'Permission denied', 'claim-desk' ) );
-        }
+		$claim_id = $db->create_claim(
+			array(
+				'order_id'  => $order_id,
+				'user_id'   => get_current_user_id(),
+				'type_slug' => $claim_type,
+				'status'    => 'pending',
+			)
+		);
 
-        // Fetch existing claims to calculate available quantity
-        $db = new Claim_Desk_DB_Handler();
-        $claimed_items = $db->get_claimed_items_by_order( $order_id );
-        
-        // Map claimed quantities by order_item_id
-        $claimed_map = array();
-        if ( ! empty( $claimed_items ) ) {
-            foreach ( $claimed_items as $ci ) {
-                if ( ! isset( $claimed_map[ $ci->order_item_id ] ) ) {
-                    $claimed_map[ $ci->order_item_id ] = 0;
-                }
-                $claimed_map[ $ci->order_item_id ] += intval( $ci->qty_claimed );
-            }
-        }
+		if ( ! $claim_id ) {
+			wp_send_json_error( __( 'Failed to create claim.', 'claim-desk' ) );
+		}
 
-        $items_data = array();
-        $debug_logs = array();
+		$dynamic_data = array(
+			'description'       => $description,
+			'product_condition' => $product_condition,
+			'refund_method'     => $refund_method,
+		);
 
-        foreach ( $order->get_items() as $item_id => $item ) {
-            $product = $item->get_product();
-            if ( ! $product ) continue;
+		$item_created = $db->create_claim_item(
+			array(
+				'claim_id'      => $claim_id,
+				'order_item_id' => $order_item_id,
+				'product_id'    => $product_id,
+				'qty_total'     => $item_total_qty,
+				'qty_claimed'   => $quantity,
+				'reason_slug'   => $problem_type,
+				'dynamic_data'  => wp_json_encode( $dynamic_data ),
+			)
+		);
 
-            $image_id = $product->get_image_id();
-            $image_url = $image_id ? wp_get_attachment_image_url( $image_id, 'thumbnail' ) : wc_placeholder_img_src();
-            
-            $original_qty = $item->get_quantity();
-            $already_claimed = isset( $claimed_map[ $item_id ] ) ? $claimed_map[ $item_id ] : 0;
-            $available_qty = max( 0, $original_qty - $already_claimed );
+		if ( ! $item_created ) {
+			wp_send_json_error( __( 'Failed to save claim item.', 'claim-desk' ) );
+		}
 
-            $debug_logs[] = "Item ID: $item_id | Original: $original_qty | Claimed Map Value: " . (isset($claimed_map[$item_id]) ? $claimed_map[$item_id] : 'NULL');
+		$upload_result = $this->save_claim_uploads( $claim_id, $db );
+		if ( is_wp_error( $upload_result ) ) {
+			wp_send_json_error( $upload_result->get_error_message() );
+		}
 
-            $items_data[] = array(
-                'id' => $item_id, // Line Item ID
-                'product_id' => $item->get_product_id(),
-                'name' => $item->get_name(),
-                'qty' => $original_qty,
-                'qty_claimed' => $already_claimed,
-                'qty_available' => $available_qty,
-                'image' => $image_url,
-                'price' => $order->get_formatted_line_subtotal( $item ),
-            );
-        }
+		wp_send_json_success(
+			array(
+				'message'  => __( 'Claim submitted successfully.', 'claim-desk' ),
+				'claim_id' => $claim_id,
+			)
+		);
+	}
 
-        wp_send_json_success( array( 'items' => $items_data, 'debug' => $debug_logs, 'raw_claims' => $claimed_items ) );
-    }
+	/**
+	 * Get enabled claim types from admin resolutions config.
+	 *
+	 * @return array
+	 */
+	private function get_enabled_claim_types() {
+		$resolutions = Claim_Desk_Config_Manager::get_resolutions();
+		if ( ! is_array( $resolutions ) ) {
+			$resolutions = array();
+		}
 
-    /**
-     * Add 'File Claim' button to My Account > Orders actions.
-     * 
-     * @param array $actions The array of actions for the order.
-     * @param WC_Order $order The order object.
-     * @return array
-     */
-    public function add_order_action_button( $actions, $order ) {
-        // TODO: specific logic to check if order is eligible for claim
+		$supported = array( 'return', 'exchange', 'coupon' );
+		$enabled   = array();
 
-        $wizard_page_id = get_page_by_path( 'claim-wizard' ); // Improve: get from settings
-        $wizard_url = $wizard_page_id ? get_permalink( $wizard_page_id ) : site_url( '/claim-wizard/' );
-        $claim_url = add_query_arg( 'order_id', $order->get_id(), $wizard_url );
+		foreach ( $supported as $claim_type ) {
+			if ( ! empty( $resolutions[ $claim_type ] ) ) {
+				$enabled[] = $claim_type;
+			}
+		}
 
-        $actions['claim-desk-trigger'] = array(
-            'url'  => $claim_url,
-            'name' => __( 'Report Problem', 'claim-desk' ),
-            'action' => 'claim-desk-trigger', // Keeps class but won't trigger modal if JS logic changes
-        );
+		return $enabled;
+	}
 
-        return $actions;
-    }
+	/**
+	 * Save claim attachment uploads using WordPress media handling.
+	 *
+	 * @param int                   $claim_id Claim ID.
+	 * @param Claim_Desk_DB_Handler $db DB handler.
+	 * @return true|WP_Error
+	 */
+	private function save_claim_uploads( $claim_id, $db ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( empty( $_FILES['files'] ) || empty( $_FILES['files']['name'] ) || ! is_array( $_FILES['files']['name'] ) ) {
+			return true;
+		}
 
-    /**
-     * Add 'Report Problem' button to Order Details page.
-     * 
-     * @param WC_Order $order
-     */
-    public function add_order_detail_button( $order ) {
-        if ( ! $order ) return;
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
 
-        if ( $order->get_user_id() !== get_current_user_id() && ! current_user_can( 'manage_woocommerce' ) ) {
-            return;
-        }
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$files = $_FILES['files'];
+		$count = count( $files['name'] );
 
-        $wizard_page_id = get_page_by_path( 'claim-wizard' );
-        $wizard_url = $wizard_page_id ? get_permalink( $wizard_page_id ) : site_url( '/claim-wizard/' );
-        $claim_url = add_query_arg( 'order_id', $order->get_id(), $wizard_url );
-        ?>
-        <p class="order-again">
-            <a href="<?php echo esc_url( $claim_url ); ?>" class="button claim-desk-trigger">
-                <?php esc_html_e( 'Report Problem', 'claim-desk' ); ?>
-            </a>
-        </p>
-        <?php
-    }
+		if ( $count > 5 ) {
+			return new WP_Error( 'cd_max_files', __( 'Maximum 5 images are allowed.', 'claim-desk' ) );
+		}
 
-    /**
-     * Render the Wizard Shortcode.
-     */
-    public function render_wizard( $atts ) {
-        // Enqueue scripts/styles if not already
-        $this->enqueue_styles();
-        $this->enqueue_scripts();
+		$allowed_extensions = array( 'jpg', 'jpeg', 'png', 'gif', 'webp' );
+		$allowed_mimes      = array( 'image/jpeg', 'image/png', 'image/gif', 'image/webp' );
+		$upload_dir         = wp_upload_dir();
 
-        ob_start();
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/partials/claim-desk-wizard.php';
-        return ob_get_clean();
-    }
+		for ( $i = 0; $i < $count; $i++ ) {
+			$name = isset( $files['name'][ $i ] ) ? $files['name'][ $i ] : '';
+			if ( '' === $name ) {
+				continue;
+			}
 
-    /**
-     * Add metadata to the order button for JS to read (Order ID).
-     * WooCommerce doesn't easily let us add data-attributes to the button via the filter above,
-     * so we might rely on the URL or DOM traversal. 
-     * However, standard Woo themes usually put the key as a class.
-     * We'll implement a footer modal wrapper that JS populates.
-     */
-    public function add_modal_markup() {
-        if ( is_account_page() ) {
-            require_once plugin_dir_path( __FILE__ ) . 'partials/claim-desk-public-modal.php';
-        }
-    }
+			$tmp_name = isset( $files['tmp_name'][ $i ] ) ? $files['tmp_name'][ $i ] : '';
+			$size     = isset( $files['size'][ $i ] ) ? absint( $files['size'][ $i ] ) : 0;
 
+			if ( $size > 2097152 ) {
+				return new WP_Error( 'cd_file_size', __( 'Each image must be 2MB or smaller.', 'claim-desk' ) );
+			}
+
+			$filetype = wp_check_filetype_and_ext( $tmp_name, $name );
+			$ext      = isset( $filetype['ext'] ) ? strtolower( (string) $filetype['ext'] ) : '';
+			$mime     = isset( $filetype['type'] ) ? strtolower( (string) $filetype['type'] ) : '';
+
+			if ( ! in_array( $ext, $allowed_extensions, true ) || ! in_array( $mime, $allowed_mimes, true ) ) {
+				return new WP_Error( 'cd_file_type', __( 'Only JPG, PNG, GIF, and WEBP images are allowed.', 'claim-desk' ) );
+			}
+
+			$file = array(
+				'name'     => $name,
+				'type'     => isset( $files['type'][ $i ] ) ? $files['type'][ $i ] : '',
+				'tmp_name' => $tmp_name,
+				'error'    => isset( $files['error'][ $i ] ) ? $files['error'][ $i ] : 0,
+				'size'     => $size,
+			);
+
+			$uploaded = wp_handle_upload(
+				$file,
+				array(
+					'test_form' => false,
+					'mimes'     => array(
+						'jpg|jpeg|jpe' => 'image/jpeg',
+						'png'          => 'image/png',
+						'gif'          => 'image/gif',
+						'webp'         => 'image/webp',
+					),
+				)
+			);
+
+			if ( isset( $uploaded['error'] ) ) {
+				return new WP_Error( 'cd_upload_error', sanitize_text_field( $uploaded['error'] ) );
+			}
+
+			$attachment_id = wp_insert_attachment(
+				array(
+					'post_mime_type' => $uploaded['type'],
+					'post_title'     => sanitize_file_name( wp_basename( $uploaded['file'] ) ),
+					'post_content'   => '',
+					'post_status'    => 'inherit',
+				),
+				$uploaded['file']
+			);
+
+			if ( is_wp_error( $attachment_id ) || ! $attachment_id ) {
+				return new WP_Error( 'cd_attachment_error', __( 'Failed to save uploaded image.', 'claim-desk' ) );
+			}
+
+			$attach_data = wp_generate_attachment_metadata( $attachment_id, $uploaded['file'] );
+			if ( ! empty( $attach_data ) ) {
+				wp_update_attachment_metadata( $attachment_id, $attach_data );
+			}
+
+			$relative_path = str_replace( $upload_dir['basedir'], '', $uploaded['file'] );
+
+			$db->save_attachment(
+				array(
+					'claim_id'  => $claim_id,
+					'file_path' => $relative_path,
+					'file_name' => wp_basename( $uploaded['file'] ),
+					'file_type' => $uploaded['type'],
+					'file_size' => filesize( $uploaded['file'] ),
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Build claimed quantity map by order item ID.
+	 *
+	 * @param int $order_id Order ID.
+	 * @return array
+	 */
+	private function get_claimed_qty_map( $order_id ) {
+		$db           = new Claim_Desk_DB_Handler();
+		$claimed_rows = $db->get_claimed_items_by_order( $order_id );
+		$claimed_map  = array();
+
+		if ( empty( $claimed_rows ) ) {
+			return $claimed_map;
+		}
+
+		foreach ( $claimed_rows as $claimed_row ) {
+			$key = absint( $claimed_row->order_item_id );
+			if ( ! isset( $claimed_map[ $key ] ) ) {
+				$claimed_map[ $key ] = 0;
+			}
+			$claimed_map[ $key ] += absint( $claimed_row->qty_claimed );
+		}
+
+		return $claimed_map;
+	}
+
+	/**
+	 * Build latest claim status map by order item ID.
+	 *
+	 * @param int $order_id Order ID.
+	 * @return array
+	 */
+	private function get_claim_status_map( $order_id ) {
+		global $wpdb;
+
+		$claims_table = $wpdb->prefix . 'cd_claims';
+		$items_table  = $wpdb->prefix . 'cd_claim_items';
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT i.order_item_id, c.status, c.updated_at, c.id
+				FROM {$items_table} i
+				INNER JOIN {$claims_table} c ON c.id = i.claim_id
+				WHERE c.order_id = %d
+				ORDER BY c.updated_at DESC, c.id DESC",
+				absint( $order_id )
+			)
+		);
+
+		$status_map = array();
+		if ( empty( $rows ) ) {
+			return $status_map;
+		}
+
+		foreach ( $rows as $row ) {
+			$order_item_id = absint( $row->order_item_id );
+			if ( isset( $status_map[ $order_item_id ] ) ) {
+				continue;
+			}
+
+			$status = sanitize_key( $row->status );
+			if ( ! in_array( $status, array( 'pending', 'approved', 'rejected' ), true ) ) {
+				$status = '';
+			}
+
+			$status_map[ $order_item_id ] = $status;
+		}
+
+		return $status_map;
+	}
+
+	/**
+	 * Evaluate if claims are allowed for the order based on claim window config.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return array
+	 */
+	private function get_order_claim_window_status( $order ) {
+		$order_status_check = $this->get_order_claim_status_check( $order );
+		if ( empty( $order_status_check['allowed'] ) ) {
+			return array(
+				'allowed' => false,
+				'mode'    => 'order_status',
+				'days'    => 0,
+				'message' => isset( $order_status_check['message'] ) ? $order_status_check['message'] : __( 'Claims can be created only after the order is delivered.', 'claim-desk' ),
+			);
+		}
+
+		$settings = Claim_Desk_Config_Manager::get_claim_window();
+		$mode     = isset( $settings['mode'] ) ? sanitize_key( $settings['mode'] ) : 'limited_days';
+		$days     = isset( $settings['days'] ) ? absint( $settings['days'] ) : 30;
+
+		if ( ! in_array( $mode, array( 'limited_days', 'no_limit', 'not_allowed' ), true ) ) {
+			$mode = 'limited_days';
+		}
+
+		if ( $days < 1 ) {
+			$days = 1;
+		}
+
+		if ( 'not_allowed' === $mode ) {
+			return array(
+				'allowed' => false,
+				'mode'    => $mode,
+				'days'    => $days,
+				'message' => __( 'Claims are currently not allowed.', 'claim-desk' ),
+			);
+		}
+
+		if ( 'no_limit' === $mode ) {
+			return array(
+				'allowed' => true,
+				'mode'    => $mode,
+				'days'    => $days,
+				'message' => '',
+			);
+		}
+
+		$completed_date = $order->get_date_completed();
+		if ( ! $completed_date ) {
+			return array(
+				'allowed' => false,
+				'mode'    => $mode,
+				'days'    => $days,
+				'message' => __( 'Claims are available after order completion.', 'claim-desk' ),
+			);
+		}
+
+		$completed_ts = absint( $completed_date->getTimestamp() );
+		$expiry_ts    = strtotime( '+' . $days . ' days', $completed_ts );
+		$current_ts   = current_time( 'timestamp', true );
+
+		if ( $expiry_ts && $current_ts > $expiry_ts ) {
+			return array(
+				'allowed' => false,
+				'mode'    => $mode,
+				'days'    => $days,
+				'message' => sprintf(
+					/* translators: %d: claim window days */
+					__( 'Claim window expired. Claims are allowed within %d days after order completion.', 'claim-desk' ),
+					$days
+				),
+			);
+		}
+
+		return array(
+			'allowed' => true,
+			'mode'    => $mode,
+			'days'    => $days,
+			'message' => '',
+		);
+	}
+
+	/**
+	 * Check whether order status allows claim creation.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return array
+	 */
+	private function get_order_claim_status_check( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return array(
+				'allowed' => false,
+				'message' => __( 'Claims can be created only after the order is delivered.', 'claim-desk' ),
+			);
+		}
+
+		$status = sanitize_key( $order->get_status() );
+		$is_allowed = ( 'completed' === $status );
+		$message    = '';
+
+		if ( ! $is_allowed ) {
+			switch ( $status ) {
+				case 'pending':
+				case 'pending-payment':
+					$message = __( 'Your order is awaiting payment. Claims can be created after the order is paid and delivered.', 'claim-desk' );
+					break;
+				case 'processing':
+					$message = __( 'Your order is being prepared for shipment. Claims can be created after delivery.', 'claim-desk' );
+					break;
+				case 'on-hold':
+					$message = __( 'Your order is currently on hold. Claims will be available once the order is processed and delivered.', 'claim-desk' );
+					break;
+				case 'cancelled':
+					$message = __( 'This order has been cancelled. Claims are not available for cancelled orders.', 'claim-desk' );
+					break;
+				case 'refunded':
+					$message = __( 'This order has already been refunded. No further claims can be created.', 'claim-desk' );
+					break;
+				case 'failed':
+					$message = __( 'This order was not successfully processed. Claims are not available for failed orders.', 'claim-desk' );
+					break;
+				case 'draft':
+					$message = __( 'This order is still in draft state. Claims will be available once the order is completed.', 'claim-desk' );
+					break;
+				default:
+					$message = __( 'Claims can be created only after the order is delivered.', 'claim-desk' );
+					break;
+			}
+		}
+
+		return array(
+			'allowed' => $is_allowed,
+			'message' => $message,
+		);
+	}
 }
