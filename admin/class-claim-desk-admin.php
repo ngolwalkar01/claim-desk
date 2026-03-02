@@ -194,6 +194,8 @@ class Claim_Desk_Admin {
                         <tr>
                             <th>Item ID</th>
                             <th>Product</th>
+                            <th>Product SKU</th>
+                            <th>Product ID</th>
                             <th>Qty Claimed</th>
                             <th>Reason</th>
                             <th>Details (JSON)</th>
@@ -207,6 +209,12 @@ class Claim_Desk_Admin {
                             <td>#<?php echo esc_html($item->order_item_id); ?></td>
                             <td>
                                 <?php echo $product ? esc_html($product->get_name()) : 'Unknown Product'; ?>
+                            </td>
+                            <td>
+                                <?php echo $product ? esc_html( $product->get_sku() ? $product->get_sku() : '-' ) : '-'; ?>
+                            </td>
+                            <td>
+                                <?php echo esc_html( absint( $item->product_id ) ); ?>
                             </td>
                             <td><?php echo esc_html($item->qty_claimed); ?> / <?php echo esc_html($item->qty_total); ?></td>
                             <td><?php echo esc_html($item->reason_slug); ?></td>

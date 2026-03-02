@@ -48,6 +48,25 @@ if ( ! defined( 'WPINC' ) ) {
                     </label>
                 </p>
             </div>
+
+            <div class="card">
+                <h3><?php esc_html_e( 'Claim Window', 'claim-desk' ); ?></h3>
+                <p><?php esc_html_e( 'Control whether customers can create claims and for how long after order completion.', 'claim-desk' ); ?></p>
+
+                <p>
+                    <label for="cd-claim-window-mode"><strong><?php esc_html_e( 'Claim window mode', 'claim-desk' ); ?></strong></label><br>
+                    <select id="cd-claim-window-mode">
+                        <option value="limited_days"><?php esc_html_e( 'Allow claims for limited days', 'claim-desk' ); ?></option>
+                        <option value="no_limit"><?php esc_html_e( 'Allow claims with no time limit', 'claim-desk' ); ?></option>
+                        <option value="not_allowed"><?php esc_html_e( 'Claims not allowed', 'claim-desk' ); ?></option>
+                    </select>
+                </p>
+
+                <p id="cd-claim-window-days-wrap">
+                    <label for="cd-claim-window-days"><strong><?php esc_html_e( 'Claim window (days)', 'claim-desk' ); ?></strong></label><br>
+                    <input type="number" id="cd-claim-window-days" min="1" step="1" value="30" class="small-text">
+                </p>
+            </div>
         </div>
 
         <!-- Problems Tab -->

@@ -249,6 +249,7 @@
 
         // Save
         $saveBtn.on('click', saveConfig);
+        $('#cd-claim-window-mode').on('change', toggleClaimWindowDaysField);
 
         // Add Row Handlers
         $('#cd-add-problem').on('click', function (e) {
@@ -343,6 +344,16 @@
                         data.conditions.forEach(c => renderRow($('#cd-conditions-list'), c));
                     }
 
+                    // Claim Window
+                    if (data.claim_window) {
+                        $('#cd-claim-window-mode').val(data.claim_window.mode || 'limited_days');
+                        $('#cd-claim-window-days').val(parseInt(data.claim_window.days, 10) || 30);
+                    } else {
+                        $('#cd-claim-window-mode').val('limited_days');
+                        $('#cd-claim-window-days').val(30);
+                    }
+                    toggleClaimWindowDaysField();
+
                     // Legacy Scopes
                     $('#cd-legacy-scopes-container').empty();
                     if (data.scopes) {
@@ -387,6 +398,11 @@
                 });
             });
 
+            const claimWindow = {
+                mode: $('#cd-claim-window-mode').val(),
+                days: parseInt($('#cd-claim-window-days').val(), 10) || 1
+            };
+
             // Gather Legacy Scopes
             const scopes = [];
             $('#cd-legacy-scopes-container .cd-scope-card').each(function () {
@@ -424,7 +440,8 @@
                 resolutions: resolutions,
                 problems: JSON.stringify(problems),
                 conditions: JSON.stringify(conditions),
-                scopes: JSON.stringify(scopes)
+                scopes: JSON.stringify(scopes),
+                claim_window: claimWindow
             }, function (res) {
                 $spinner.removeClass('is-active');
                 $saveBtn.prop('disabled', false);
@@ -481,6 +498,15 @@
                         <button type="button" class="button-link cd-remove-sub" style="color:red;">&times;</button>
                     </div>`);
                 });
+            }
+        }
+
+        function toggleClaimWindowDaysField() {
+            const mode = $('#cd-claim-window-mode').val();
+            if (mode === 'limited_days') {
+                $('#cd-claim-window-days-wrap').show();
+            } else {
+                $('#cd-claim-window-days-wrap').hide();
             }
         }
 

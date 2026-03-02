@@ -158,6 +158,9 @@ class Claim_Desk {
         
         // Add Button to My Account > Orders
         $this->loader->add_filter( 'woocommerce_my_account_my_orders_actions', $plugin_public, 'add_order_action_button', 10, 2 );
+
+		// Render per-product claim UI on My Account > View Order.
+		$this->loader->add_action( 'woocommerce_order_details_after_order_table', $plugin_public, 'render_order_claim_interface' );
         
         // Register Shortcode
         add_shortcode( 'claim_desk_wizard', array( $plugin_public, 'render_wizard' ) );
