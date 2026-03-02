@@ -274,7 +274,8 @@ class Claim_Desk_Public {
 			wp_send_json_error( __( 'Missing required claim data.', 'claim-desk' ) );
 		}
 
-		if ( ! in_array( $claim_type, array( 'return', 'exchange' ), true ) ) {
+		$enabled_claim_types = $this->get_enabled_claim_types();
+		if ( ! in_array( $claim_type, $enabled_claim_types, true ) ) {
 			wp_send_json_error( __( 'Invalid claim type.', 'claim-desk' ) );
 		}
 
@@ -369,6 +370,29 @@ class Claim_Desk_Public {
 				'claim_id' => $claim_id,
 			)
 		);
+	}
+
+	/**
+	 * Get enabled claim types from admin resolutions config.
+	 *
+	 * @return array
+	 */
+	private function get_enabled_claim_types() {
+		$resolutions = Claim_Desk_Config_Manager::get_resolutions();
+		if ( ! is_array( $resolutions ) ) {
+			$resolutions = array();
+		}
+
+		$supported = array( 'return', 'exchange', 'coupon' );
+		$enabled   = array();
+
+		foreach ( $supported as $claim_type ) {
+			if ( ! empty( $resolutions[ $claim_type ] ) ) {
+				$enabled[] = $claim_type;
+			}
+		}
+
+		return $enabled;
 	}
 
 	/**

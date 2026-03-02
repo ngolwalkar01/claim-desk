@@ -27,6 +27,36 @@ if ( empty( $claim_desk_conditions ) ) {
 		),
 	);
 }
+
+$claim_desk_resolutions = Claim_Desk_Config_Manager::get_resolutions();
+if ( ! is_array( $claim_desk_resolutions ) ) {
+	$claim_desk_resolutions = array();
+}
+
+$claim_type_catalog = array(
+	'return'   => array(
+		'label'  => __( 'Return', 'claim-desk' ),
+		'detail' => __( 'Send item back and get your refund.', 'claim-desk' ),
+		'icon'   => '&#8635;',
+	),
+	'exchange' => array(
+		'label'  => __( 'Exchange', 'claim-desk' ),
+		'detail' => __( 'Replace with another unit or size.', 'claim-desk' ),
+		'icon'   => '&#8644;',
+	),
+	'coupon'   => array(
+		'label'  => __( 'Discount Coupon', 'claim-desk' ),
+		'detail' => __( 'Get a discount coupon as store credit.', 'claim-desk' ),
+		'icon'   => '&#127991;',
+	),
+);
+
+$enabled_claim_types = array();
+foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
+	if ( ! empty( $claim_desk_resolutions[ $claim_type_key ] ) && isset( $claim_type_catalog[ $claim_type_key ] ) ) {
+		$enabled_claim_types[ $claim_type_key ] = $claim_type_catalog[ $claim_type_key ];
+	}
+}
 ?>
 <section id="cd-order-claims" class="cd-order-claims" data-order-id="<?php echo esc_attr( $order->get_id() ); ?>">
 	<h3 class="cd-order-claims__title"><?php esc_html_e( 'Start a Claim', 'claim-desk' ); ?></h3>
@@ -137,34 +167,26 @@ if ( empty( $claim_desk_conditions ) ) {
 					<label><?php esc_html_e( 'Select Claim Type', 'claim-desk' ); ?></label>
 					<input type="hidden" id="cd-claim-type" required>
 					<div class="cd-claim-type-cards" role="radiogroup" aria-label="<?php esc_attr_e( 'Select claim type', 'claim-desk' ); ?>">
-						<button
-							type="button"
-							class="cd-claim-type-card"
-							data-value="return"
-							data-label="<?php esc_attr_e( 'Return', 'claim-desk' ); ?>"
-							role="radio"
-							aria-checked="false"
-						>
-							<span class="cd-claim-type-card__icon" aria-hidden="true">&#8635;</span>
-							<span class="cd-claim-type-card__content">
-								<span class="cd-claim-type-card__title"><?php esc_html_e( 'Return', 'claim-desk' ); ?></span>
-								<span class="cd-claim-type-card__detail"><?php esc_html_e( 'Send item back and get your refund.', 'claim-desk' ); ?></span>
-							</span>
-						</button>
-						<button
-							type="button"
-							class="cd-claim-type-card"
-							data-value="exchange"
-							data-label="<?php esc_attr_e( 'Exchange', 'claim-desk' ); ?>"
-							role="radio"
-							aria-checked="false"
-						>
-							<span class="cd-claim-type-card__icon" aria-hidden="true">&#8644;</span>
-							<span class="cd-claim-type-card__content">
-								<span class="cd-claim-type-card__title"><?php esc_html_e( 'Exchange', 'claim-desk' ); ?></span>
-								<span class="cd-claim-type-card__detail"><?php esc_html_e( 'Replace with another unit or size.', 'claim-desk' ); ?></span>
-							</span>
-						</button>
+						<?php if ( empty( $enabled_claim_types ) ) : ?>
+							<p class="cd-claim-row__notice--error"><?php esc_html_e( 'No claim types are currently enabled by the store admin.', 'claim-desk' ); ?></p>
+						<?php else : ?>
+							<?php foreach ( $enabled_claim_types as $claim_type_value => $claim_type_data ) : ?>
+								<button
+									type="button"
+									class="cd-claim-type-card"
+									data-value="<?php echo esc_attr( $claim_type_value ); ?>"
+									data-label="<?php echo esc_attr( $claim_type_data['label'] ); ?>"
+									role="radio"
+									aria-checked="false"
+								>
+									<span class="cd-claim-type-card__icon" aria-hidden="true"><?php echo wp_kses_post( $claim_type_data['icon'] ); ?></span>
+									<span class="cd-claim-type-card__content">
+										<span class="cd-claim-type-card__title"><?php echo esc_html( $claim_type_data['label'] ); ?></span>
+										<span class="cd-claim-type-card__detail"><?php echo esc_html( $claim_type_data['detail'] ); ?></span>
+									</span>
+								</button>
+							<?php endforeach; ?>
+						<?php endif; ?>
 					</div>
 				</div>
 
