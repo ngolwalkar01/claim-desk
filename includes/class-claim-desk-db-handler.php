@@ -179,11 +179,13 @@ class Claim_Desk_DB_Handler {
 
         $claim_id = absint($claim_id);
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $query = $wpdb->prepare( "SELECT * FROM {$this->table_attachments} WHERE claim_id = %d ORDER BY uploaded_at ASC", $claim_id );
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-        return $wpdb->get_results( $query );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_attachments} WHERE claim_id = %d ORDER BY uploaded_at ASC",
+                $claim_id
+            )
+        );
     }
 
 }
