@@ -262,6 +262,12 @@
             renderRow($('#cd-conditions-list'), { label: '', value: '' });
         });
 
+        // Remove only the clicked row in Problems/Conditions tables.
+        $(document).on('click', '.cd-remove-row', function (e) {
+            e.preventDefault();
+            $(this).closest('tr.cd-item-row').remove();
+        });
+
         // --- functions ---
 
         function loadConfig() {
