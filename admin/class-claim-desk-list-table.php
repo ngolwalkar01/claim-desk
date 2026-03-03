@@ -235,11 +235,18 @@ class Claim_Desk_List_Table extends WP_List_Table {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                 $wpdb->update( 
                     $table_claims, 
-                    array( 'status' => 'rejected' ), 
+                    array(
+                        'status' => 'rejected',
+                        'updated_at' => current_time( 'mysql' ),
+                        'last_status_update_at' => current_time( 'mysql' ),
+                        'reminder_sent' => 0,
+                        'reminder_sent_at' => null,
+                    ),
                     array( 'id' => $id ), 
-                    array( '%s' ), 
+                    array( '%s', '%s', '%s', '%d', '%s' ), 
                     array( '%d' ) 
                 );
+                do_action( 'claim_desk_claim_status_updated', absint( $id ), 'rejected' );
             }
             echo '<div class="updated"><p>' . esc_html__( 'Claims rejected.', 'claim-desk' ) . '</p></div>';
             wp_cache_delete( 'cd_claims_total_count', 'claim-desk' );
@@ -251,11 +258,18 @@ class Claim_Desk_List_Table extends WP_List_Table {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                 $wpdb->update( 
                     $table_claims, 
-                    array( 'status' => 'approved' ), 
+                    array(
+                        'status' => 'approved',
+                        'updated_at' => current_time( 'mysql' ),
+                        'last_status_update_at' => current_time( 'mysql' ),
+                        'reminder_sent' => 0,
+                        'reminder_sent_at' => null,
+                    ),
                     array( 'id' => $id ), 
-                    array( '%s' ), 
+                    array( '%s', '%s', '%s', '%d', '%s' ), 
                     array( '%d' ) 
                 );
+                do_action( 'claim_desk_claim_status_updated', absint( $id ), 'approved' );
             }
             echo '<div class="updated"><p>' . esc_html__( 'Claims approved.', 'claim-desk' ) . '</p></div>';
             wp_cache_delete( 'cd_claims_total_count', 'claim-desk' );

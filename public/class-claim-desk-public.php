@@ -364,6 +364,11 @@ class Claim_Desk_Public {
 			wp_send_json_error( $upload_result->get_error_message() );
 		}
 
+		/**
+		 * Fire after claim is created.
+		 */
+		do_action( 'claim_desk_claim_created', absint( $claim_id ) );
+
 		wp_send_json_success(
 			array(
 				'message'  => __( 'Claim submitted successfully.', 'claim-desk' ),

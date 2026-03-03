@@ -18,6 +18,8 @@ class Claim_Desk_Activator {
 	 */
 	public static function activate() {
 		self::create_tables();
+		update_option( 'claim_desk_db_version', '1.1.0' );
+		self::schedule_reminder_event();
 	}
 
 	/**
@@ -45,11 +47,16 @@ class Claim_Desk_Activator {
 			admin_remarks text DEFAULT NULL,
 			created_at datetime DEFAULT CURRENT_TIMESTAMP,
 			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			last_status_update_at datetime DEFAULT CURRENT_TIMESTAMP,
+			reminder_sent tinyint(1) NOT NULL DEFAULT 0,
+			reminder_sent_at datetime DEFAULT NULL,
 			PRIMARY KEY  (id),
 			KEY order_id (order_id),
 			KEY user_id (user_id),
 			KEY type_slug (type_slug),
-			KEY status (status)
+			KEY status (status),
+			KEY status_last_status_update (status, last_status_update_at),
+			KEY reminder_sent (reminder_sent)
 		) $charset_collate;";
 
 		dbDelta( $sql_claims );
@@ -86,6 +93,17 @@ class Claim_Desk_Activator {
 		) $charset_collate;";
 
 		dbDelta( $sql_attachments );
+	}
+
+	/**
+	 * Schedule reminder cron event.
+	 *
+	 * @return void
+	 */
+	private static function schedule_reminder_event() {
+		if ( ! wp_next_scheduled( 'claim_desk_check_reminders' ) ) {
+			wp_schedule_event( time() + 300, 'hourly', 'claim_desk_check_reminders' );
+		}
 	}
 
 }

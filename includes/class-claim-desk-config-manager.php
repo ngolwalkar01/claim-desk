@@ -121,6 +121,48 @@ class Claim_Desk_Config_Manager {
     }
 
     /**
+     * Get reminder settings.
+     *
+     * @return array
+     */
+    public static function get_reminder_settings() {
+        $defaults = array(
+            'enabled' => false,
+            'delay' => '3',
+            'custom_days' => 3,
+            'delay_days' => 3,
+        );
+
+        $settings = get_option( 'claim_desk_reminder_settings', $defaults );
+        if ( ! is_array( $settings ) ) {
+            return $defaults;
+        }
+
+        $enabled = ! empty( $settings['enabled'] );
+        $delay   = isset( $settings['delay'] ) ? sanitize_key( (string) $settings['delay'] ) : '3';
+        if ( ! in_array( $delay, array( '1', '2', '3', '7', 'custom' ), true ) ) {
+            $delay = '3';
+        }
+
+        $custom_days = isset( $settings['custom_days'] ) ? absint( $settings['custom_days'] ) : 3;
+        if ( $custom_days < 1 ) {
+            $custom_days = 1;
+        }
+
+        $delay_days = ( 'custom' === $delay ) ? $custom_days : absint( $delay );
+        if ( $delay_days < 1 ) {
+            $delay_days = 3;
+        }
+
+        return array(
+            'enabled' => $enabled,
+            'delay' => $delay,
+            'custom_days' => $custom_days,
+            'delay_days' => $delay_days,
+        );
+    }
+
+    /**
      * AJAX Handler: Save Configuration.
      */
     public function ajax_save_config() {
@@ -243,6 +285,39 @@ class Claim_Desk_Config_Manager {
             update_option( 'claim_desk_claim_window', $claim_window );
         }
 
+        // Save Reminder Settings
+        if ( isset( $_POST['reminder_settings'] ) ) {
+            // Read raw array safely, then sanitize values below.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            $reminder_raw = wp_unslash( $_POST['reminder_settings'] );
+            $reminder     = array(
+                'enabled' => false,
+                'delay' => '3',
+                'custom_days' => 3,
+            );
+
+            if ( is_array( $reminder_raw ) ) {
+                $enabled = isset( $reminder_raw['enabled'] ) ? sanitize_text_field( (string) $reminder_raw['enabled'] ) : '';
+                $delay   = isset( $reminder_raw['delay'] ) ? sanitize_key( (string) $reminder_raw['delay'] ) : '3';
+                if ( ! in_array( $delay, array( '1', '2', '3', '7', 'custom' ), true ) ) {
+                    $delay = '3';
+                }
+
+                $custom_days = isset( $reminder_raw['custom_days'] ) ? absint( $reminder_raw['custom_days'] ) : 3;
+                if ( $custom_days < 1 ) {
+                    $custom_days = 1;
+                }
+
+                $reminder = array(
+                    'enabled' => ( 'true' === $enabled || '1' === $enabled ),
+                    'delay' => $delay,
+                    'custom_days' => $custom_days,
+                );
+            }
+
+            update_option( 'claim_desk_reminder_settings', $reminder );
+        }
+
         wp_send_json_success( __( 'Configuration saved.', 'claim-desk' ) );
     }
 
@@ -258,6 +333,7 @@ class Claim_Desk_Config_Manager {
             'problems'    => self::get_problems(),
             'conditions'  => self::get_conditions(),
             'claim_window' => self::get_claim_window(),
+            'reminder_settings' => self::get_reminder_settings(),
         );
 
         wp_send_json_success( $data );

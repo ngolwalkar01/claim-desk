@@ -36,12 +36,15 @@ class Claim_Desk_DB_Handler {
         $defaults = array(
             'status' => 'pending',
             'created_at' => current_time( 'mysql' ),
-            'updated_at' => current_time( 'mysql' )
+            'updated_at' => current_time( 'mysql' ),
+            'last_status_update_at' => current_time( 'mysql' ),
+            'reminder_sent' => 0,
+            'reminder_sent_at' => null,
         );
 
         $args = wp_parse_args( $data, $defaults );
 
-        $format = array( '%d', '%d', '%s', '%s', '%s', '%s' );
+        $format = array( '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%s' );
         
         // We need 100% strict column mapping for $wpdb->insert
         $insert_data = array(
@@ -50,7 +53,10 @@ class Claim_Desk_DB_Handler {
             'type_slug'  => sanitize_text_field( $args['type_slug'] ),
             'status'     => sanitize_key( $args['status'] ),
             'created_at' => $args['created_at'],
-            'updated_at' => $args['updated_at']
+            'updated_at' => $args['updated_at'],
+            'last_status_update_at' => $args['last_status_update_at'],
+            'reminder_sent' => absint( $args['reminder_sent'] ) ? 1 : 0,
+            'reminder_sent_at' => $args['reminder_sent_at'],
         );
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -186,6 +192,160 @@ class Claim_Desk_DB_Handler {
                 $claim_id
             )
         );
+    }
+
+    /**
+     * Get claim by ID.
+     *
+     * @param int $claim_id Claim ID.
+     * @return object|null
+     */
+    public function get_claim( $claim_id ) {
+        global $wpdb;
+        $claim_id = absint( $claim_id );
+        if ( ! $claim_id ) {
+            return null;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        return $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_claims} WHERE id = %d",
+                $claim_id
+            )
+        );
+    }
+
+    /**
+     * Get claim items by claim ID.
+     *
+     * @param int $claim_id Claim ID.
+     * @return array
+     */
+    public function get_claim_items( $claim_id ) {
+        global $wpdb;
+        $claim_id = absint( $claim_id );
+        if ( ! $claim_id ) {
+            return array();
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_items} WHERE claim_id = %d ORDER BY id ASC",
+                $claim_id
+            )
+        );
+    }
+
+    /**
+     * Mark reminder as sent.
+     *
+     * @param int $claim_id Claim ID.
+     * @return void
+     */
+    public function mark_reminder_sent( $claim_id ) {
+        global $wpdb;
+        $claim_id = absint( $claim_id );
+        if ( ! $claim_id ) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->update(
+            $this->table_claims,
+            array(
+                'reminder_sent' => 1,
+                'reminder_sent_at' => current_time( 'mysql' ),
+            ),
+            array( 'id' => $claim_id ),
+            array( '%d', '%s' ),
+            array( '%d' )
+        );
+    }
+
+    /**
+     * Set reminder tracking back to "not sent" and refresh last action timestamp.
+     *
+     * @param int $claim_id Claim ID.
+     * @return void
+     */
+    public function reset_reminder_tracking( $claim_id ) {
+        global $wpdb;
+        $claim_id = absint( $claim_id );
+        if ( ! $claim_id ) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->update(
+            $this->table_claims,
+            array(
+                'last_status_update_at' => current_time( 'mysql' ),
+                'reminder_sent' => 0,
+                'reminder_sent_at' => null,
+            ),
+            array( 'id' => $claim_id ),
+            array( '%s', '%d', '%s' ),
+            array( '%d' )
+        );
+    }
+
+    /**
+     * Mark reminder as not required (terminal state).
+     *
+     * @param int $claim_id Claim ID.
+     * @return void
+     */
+    public function mark_reminder_not_required( $claim_id ) {
+        global $wpdb;
+        $claim_id = absint( $claim_id );
+        if ( ! $claim_id ) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->update(
+            $this->table_claims,
+            array(
+                'reminder_sent' => 1,
+                'reminder_sent_at' => current_time( 'mysql' ),
+                'last_status_update_at' => current_time( 'mysql' ),
+            ),
+            array( 'id' => $claim_id ),
+            array( '%d', '%s', '%s' ),
+            array( '%d' )
+        );
+    }
+
+    /**
+     * Get pending claim IDs that need reminder.
+     *
+     * @param string $threshold_mysql UTC datetime threshold.
+     * @param int    $limit Query limit.
+     * @return int[]
+     */
+    public function get_claim_ids_for_reminder( $threshold_mysql, $limit = 100 ) {
+        global $wpdb;
+
+        $limit = max( 1, absint( $limit ) );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $rows = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT id
+                FROM {$this->table_claims}
+                WHERE reminder_sent = 0
+                AND status NOT IN ('approved', 'rejected', 'completed', 'closed')
+                AND last_status_update_at <= %s
+                ORDER BY last_status_update_at ASC
+                LIMIT %d",
+                $threshold_mysql,
+                $limit
+            )
+        );
+
+        return array_map( 'absint', (array) $rows );
     }
 
 }

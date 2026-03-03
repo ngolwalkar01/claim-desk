@@ -110,6 +110,10 @@ class Claim_Desk {
          * The class responsible for database operations.
          */
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-claim-desk-db-handler.php';
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-claim-desk-claim-data.php';
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-claim-desk-email-manager.php';
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-claim-desk-reminder-service.php';
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-claim-desk-upgrader.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the public-facing
@@ -118,6 +122,7 @@ class Claim_Desk {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-claim-desk-public.php';
 
 		$this->loader = new Claim_Desk_Loader();
+		Claim_Desk_Upgrader::maybe_upgrade();
 
 	}
 
@@ -137,7 +142,7 @@ class Claim_Desk {
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
         $this->loader->add_action( 'admin_menu', $plugin_admin, 'add_plugin_admin_menu' );
-		$this->loader->add_action( 'admin_init', $plugin_admin, 'process_status_update' );
+        $this->loader->add_action( 'admin_init', $plugin_admin, 'process_status_update' );
 
 	}
 
@@ -163,8 +168,26 @@ class Claim_Desk {
 		$this->loader->add_action( 'woocommerce_order_details_after_order_table', $plugin_public, 'render_order_claim_interface' );
         
         // Register Shortcode
-        add_shortcode( 'claim_desk_wizard', array( $plugin_public, 'render_wizard' ) );
+		add_shortcode( 'claim_desk_wizard', array( $plugin_public, 'render_wizard' ) );
 
+	}
+
+	/**
+	 * Register email and reminder hooks.
+	 *
+	 * @since 1.0.0
+	 */
+	private function define_email_hooks() {
+		$email_manager    = new Claim_Desk_Email_Manager();
+		$reminder_service = new Claim_Desk_Reminder_Service();
+
+		$this->loader->add_filter( 'woocommerce_email_classes', $email_manager, 'register_email_classes' );
+		$this->loader->add_action( 'claim_desk_claim_created', $email_manager, 'trigger_claim_created_emails', 10, 1 );
+		$this->loader->add_action( 'claim_desk_claim_status_updated', $email_manager, 'trigger_claim_status_updated_email', 10, 2 );
+		$this->loader->add_action( 'claim_desk_check_reminders', $reminder_service, 'process_pending_claims', 10, 0 );
+		$this->loader->add_action( 'init', $reminder_service, 'maybe_schedule_event', 20, 0 );
+		$this->loader->add_action( 'claim_desk_claim_created', $reminder_service, 'handle_claim_created', 10, 1 );
+		$this->loader->add_action( 'claim_desk_claim_status_updated', $reminder_service, 'handle_claim_status_updated', 10, 2 );
 	}
 
 	/**
@@ -173,6 +196,7 @@ class Claim_Desk {
 	 * @since    1.0.0
 	 */
 	public function run() {
+		$this->define_email_hooks();
 		$this->loader->run();
 	}
 

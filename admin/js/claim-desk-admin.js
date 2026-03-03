@@ -250,6 +250,7 @@
         // Save
         $saveBtn.on('click', saveConfig);
         $('#cd-claim-window-mode').on('change', toggleClaimWindowDaysField);
+        $('#cd-reminder-delay').on('change', toggleReminderCustomDaysField);
 
         // Add Row Handlers
         $('#cd-add-problem').on('click', function (e) {
@@ -365,6 +366,18 @@
                         });
                     }
 
+                    // Reminder Settings
+                    if (data.reminder_settings) {
+                        $('#cd-reminder-enabled').prop('checked', !!data.reminder_settings.enabled);
+                        $('#cd-reminder-delay').val(data.reminder_settings.delay || '3');
+                        $('#cd-reminder-custom-days').val(parseInt(data.reminder_settings.custom_days, 10) || 3);
+                    } else {
+                        $('#cd-reminder-enabled').prop('checked', false);
+                        $('#cd-reminder-delay').val('3');
+                        $('#cd-reminder-custom-days').val(3);
+                    }
+                    toggleReminderCustomDaysField();
+
                 } else {
                     alert('Failed to load config');
                 }
@@ -401,6 +414,12 @@
             const claimWindow = {
                 mode: $('#cd-claim-window-mode').val(),
                 days: parseInt($('#cd-claim-window-days').val(), 10) || 1
+            };
+
+            const reminderSettings = {
+                enabled: $('#cd-reminder-enabled').is(':checked'),
+                delay: $('#cd-reminder-delay').val(),
+                custom_days: parseInt($('#cd-reminder-custom-days').val(), 10) || 1
             };
 
             // Gather Legacy Scopes
@@ -441,7 +460,8 @@
                 problems: JSON.stringify(problems),
                 conditions: JSON.stringify(conditions),
                 scopes: JSON.stringify(scopes),
-                claim_window: claimWindow
+                claim_window: claimWindow,
+                reminder_settings: reminderSettings
             }, function (res) {
                 $spinner.removeClass('is-active');
                 $saveBtn.prop('disabled', false);
@@ -507,6 +527,15 @@
                 $('#cd-claim-window-days-wrap').show();
             } else {
                 $('#cd-claim-window-days-wrap').hide();
+            }
+        }
+
+        function toggleReminderCustomDaysField() {
+            const delay = $('#cd-reminder-delay').val();
+            if (delay === 'custom') {
+                $('#cd-reminder-custom-days-wrap').show();
+            } else {
+                $('#cd-reminder-custom-days-wrap').hide();
             }
         }
 

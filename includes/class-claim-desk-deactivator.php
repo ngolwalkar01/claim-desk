@@ -20,6 +20,7 @@ class Claim_Desk_Deactivator {
 	public static function deactivate() {
         // Typically, we do NOT drop tables on deactivation to preserve data.
         // Tables are usually dropped only on 'uninstall'.
+		wp_clear_scheduled_hook( 'claim_desk_check_reminders' );
 	}
 
 }

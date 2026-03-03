@@ -678,11 +678,19 @@ class Claim_Desk_Admin {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $wpdb->update( 
             $table_claims, 
-            array( 'status' => $status, 'updated_at' => current_time( 'mysql' ) ), 
+            array(
+                'status' => $status,
+                'updated_at' => current_time( 'mysql' ),
+                'last_status_update_at' => current_time( 'mysql' ),
+                'reminder_sent' => 0,
+                'reminder_sent_at' => null,
+            ),
             array( 'id' => $claim_id ),
-            array( '%s', '%s' ),
+            array( '%s', '%s', '%s', '%d', '%s' ),
             array( '%d' )
         );
+
+        do_action( 'claim_desk_claim_status_updated', $claim_id, $status );
 
         // Redirect to avoid resubmission
         $redirect_url = add_query_arg( array(

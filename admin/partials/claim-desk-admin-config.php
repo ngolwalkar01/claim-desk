@@ -67,6 +67,34 @@ if ( ! defined( 'WPINC' ) ) {
                     <input type="number" id="cd-claim-window-days" min="1" step="1" value="30" class="small-text">
                 </p>
             </div>
+
+            <div class="card">
+                <h3><?php esc_html_e( 'Claim Reminder Settings', 'claim-desk' ); ?></h3>
+                <p><?php esc_html_e( 'Send reminder email to admin if no action is taken on a claim within the selected time.', 'claim-desk' ); ?></p>
+
+                <p>
+                    <label>
+                        <input type="checkbox" id="cd-reminder-enabled" value="1">
+                        <?php esc_html_e( 'Enable admin reminder emails', 'claim-desk' ); ?>
+                    </label>
+                </p>
+
+                <p>
+                    <label for="cd-reminder-delay"><strong><?php esc_html_e( 'Reminder delay', 'claim-desk' ); ?></strong></label><br>
+                    <select id="cd-reminder-delay">
+                        <option value="1"><?php esc_html_e( '1 day', 'claim-desk' ); ?></option>
+                        <option value="2"><?php esc_html_e( '2 days', 'claim-desk' ); ?></option>
+                        <option value="3"><?php esc_html_e( '3 days', 'claim-desk' ); ?></option>
+                        <option value="7"><?php esc_html_e( '7 days (1 week)', 'claim-desk' ); ?></option>
+                        <option value="custom"><?php esc_html_e( 'Custom', 'claim-desk' ); ?></option>
+                    </select>
+                </p>
+
+                <p id="cd-reminder-custom-days-wrap" style="display:none;">
+                    <label for="cd-reminder-custom-days"><strong><?php esc_html_e( 'Custom days', 'claim-desk' ); ?></strong></label><br>
+                    <input type="number" id="cd-reminder-custom-days" min="1" step="1" value="3" class="small-text">
+                </p>
+            </div>
         </div>
 
         <!-- Problems Tab -->

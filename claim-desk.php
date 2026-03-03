@@ -31,6 +31,9 @@ if ( ! defined( 'WPINC' ) ) {
  * Currently plugin version.
  */
 define( 'CLAIM_DESK_VERSION', '1.0.0' );
+define( 'CLAIM_DESK_PLUGIN_FILE', __FILE__ );
+define( 'CLAIM_DESK_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
+define( 'CLAIM_DESK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 /**
  * The code that runs during plugin activation.
