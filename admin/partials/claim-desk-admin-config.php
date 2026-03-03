@@ -149,7 +149,11 @@ if ( ! defined( 'WPINC' ) ) {
         <tr class="cd-item-row">
             <td><input type="text" class="regular-text cd-item-label" value="{{label}}"></td>
             <td><input type="text" class="regular-text cd-item-value" value="{{value}}"></td>
-            <td><span class="dashicons dashicons-trash cd-remove-row" style="cursor:pointer; color:red;"></span></td>
+            <td>
+                <button type="button" class="button-link-delete cd-remove-row" aria-label="<?php esc_attr_e( 'Delete row', 'claim-desk' ); ?>">
+                    <span class="dashicons dashicons-trash" aria-hidden="true"></span>
+                </button>
+            </td>
         </tr>
     </script>
 

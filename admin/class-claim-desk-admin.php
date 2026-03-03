@@ -48,8 +48,9 @@ class Claim_Desk_Admin {
 	 * @since    1.0.0
 	 */
 	public function enqueue_styles() {
-
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/claim-desk-admin.css', array(), $this->version, 'all' );
+		$style_path = plugin_dir_path( __FILE__ ) . 'css/claim-desk-admin.css';
+		$style_ver  = file_exists( $style_path ) ? (string) filemtime( $style_path ) : $this->version;
+		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/claim-desk-admin.css', array(), $style_ver, 'all' );
 
 	}
 
@@ -59,8 +60,9 @@ class Claim_Desk_Admin {
 	 * @since    1.0.0
 	 */
 	public function enqueue_scripts() {
-
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/claim-desk-admin.js', array( 'jquery' ), $this->version, false );
+		$script_path = plugin_dir_path( __FILE__ ) . 'js/claim-desk-admin.js';
+		$script_ver  = file_exists( $script_path ) ? (string) filemtime( $script_path ) : $this->version;
+		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/claim-desk-admin.js', array( 'jquery' ), $script_ver, false );
 
         // Localize script for AJAX
         wp_localize_script( $this->plugin_name, 'claim_desk_admin', array(
