@@ -199,6 +199,12 @@
 	font-weight: 600;
 }
 
+.cd-required-mark {
+	color: #dc2626;
+	margin-left: 2px;
+	font-weight: 700;
+}
+
 .cd-form-row select,
 .cd-form-row textarea,
 .cd-form-row input[type="file"] {

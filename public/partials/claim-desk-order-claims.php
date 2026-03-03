@@ -164,7 +164,10 @@ foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
 
 			<div class="cd-claim-modal__body">
 				<div class="cd-form-row">
-					<label><?php esc_html_e( 'Select Claim Type', 'claim-desk' ); ?></label>
+					<label>
+						<?php esc_html_e( 'Select Claim Type', 'claim-desk' ); ?>
+						<span class="cd-required-mark" aria-hidden="true">*</span>
+					</label>
 					<input type="hidden" id="cd-claim-type" required>
 					<div class="cd-claim-type-cards" role="radiogroup" aria-label="<?php esc_attr_e( 'Select claim type', 'claim-desk' ); ?>">
 						<?php if ( empty( $enabled_claim_types ) ) : ?>
@@ -191,7 +194,10 @@ foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
 				</div>
 
 				<div class="cd-form-row">
-					<label for="cd-problem-type"><?php esc_html_e( 'Problem Type', 'claim-desk' ); ?></label>
+					<label for="cd-problem-type">
+						<?php esc_html_e( 'Problem Type', 'claim-desk' ); ?>
+						<span class="cd-required-mark" aria-hidden="true">*</span>
+					</label>
 					<select id="cd-problem-type" required>
 						<option value=""><?php esc_html_e( 'Select problem type', 'claim-desk' ); ?></option>
 						<?php foreach ( (array) Claim_Desk_Config_Manager::get_problems() as $problem ) : ?>
@@ -201,7 +207,10 @@ foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
 				</div>
 
 				<div class="cd-form-row">
-					<label for="cd-problem-description"><?php esc_html_e( 'Description', 'claim-desk' ); ?></label>
+					<label for="cd-problem-description">
+						<?php esc_html_e( 'Description', 'claim-desk' ); ?>
+						<span class="cd-required-mark" aria-hidden="true">*</span>
+					</label>
 					<textarea id="cd-problem-description" rows="4" required></textarea>
 				</div>
 
@@ -219,7 +228,10 @@ foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
 				</div>
 
 				<div class="cd-form-row">
-					<label for="cd-product-condition"><?php esc_html_e( 'Product Condition', 'claim-desk' ); ?></label>
+					<label for="cd-product-condition">
+						<?php esc_html_e( 'Product Condition', 'claim-desk' ); ?>
+						<span class="cd-required-mark" aria-hidden="true">*</span>
+					</label>
 					<select id="cd-product-condition" required>
 						<option value=""><?php esc_html_e( 'Select condition', 'claim-desk' ); ?></option>
 						<?php foreach ( $claim_desk_conditions as $condition ) : ?>
@@ -229,7 +241,10 @@ foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
 				</div>
 
 				<div class="cd-form-row">
-					<label for="cd-refund-method"><?php esc_html_e( 'Refund Method', 'claim-desk' ); ?></label>
+					<label for="cd-refund-method">
+						<?php esc_html_e( 'Refund Method', 'claim-desk' ); ?>
+						<span class="cd-required-mark" aria-hidden="true">*</span>
+					</label>
 					<select id="cd-refund-method" required>
 						<option value=""><?php esc_html_e( 'Select refund method', 'claim-desk' ); ?></option>
 						<option value="original"><?php esc_html_e( 'Original Payment Method', 'claim-desk' ); ?></option>
