@@ -408,6 +408,13 @@ class Claim_Desk_Public {
 	 * @return true|WP_Error
 	 */
 	private function save_claim_uploads( $claim_id, $db ) {
+		// Verify nonce within this method before handling uploaded files.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'claim_desk_public_nonce' ) ) {
+			return new WP_Error( 'cd_invalid_nonce', __( 'Security check failed. Please refresh and try again.', 'claim-desk' ) );
+		}
+
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( empty( $_FILES['files'] ) || empty( $_FILES['files']['name'] ) || ! is_array( $_FILES['files']['name'] ) ) {
 			return true;
@@ -547,14 +554,16 @@ class Claim_Desk_Public {
 		$claims_table = $wpdb->prefix . 'cd_claims';
 		$items_table  = $wpdb->prefix . 'cd_claim_items';
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT i.order_item_id, c.status, c.updated_at, c.id
-				FROM {$items_table} i
-				INNER JOIN {$claims_table} c ON c.id = i.claim_id
+				'SELECT i.order_item_id, c.status, c.updated_at, c.id
+				FROM %i i
+				INNER JOIN %i c ON c.id = i.claim_id
 				WHERE c.order_id = %d
-				ORDER BY c.updated_at DESC, c.id DESC",
+				ORDER BY c.updated_at DESC, c.id DESC',
+				$items_table,
+				$claims_table,
 				absint( $order_id )
 			)
 		);
