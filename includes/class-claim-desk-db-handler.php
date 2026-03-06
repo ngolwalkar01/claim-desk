@@ -111,19 +111,27 @@ class Claim_Desk_DB_Handler {
 
         $order_id = absint( $order_id );
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $results = $wpdb->get_results( $wpdb->prepare( "SELECT i.order_item_id, i.qty_claimed, c.status
-                FROM {$this->table_items} i
-                JOIN {$this->table_claims} c ON i.claim_id = c.id
-                WHERE c.order_id = %d 
-                AND c.status != 'rejected'", $order_id ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT i.order_item_id, i.qty_claimed, c.status
+                FROM %i i
+                JOIN %i c ON i.claim_id = c.id
+                WHERE c.order_id = %d
+                AND c.status != 'rejected'",
+                $this->table_items,
+                $this->table_claims,
+                $order_id
+            )
+        );
         
         if ( empty( $results ) ) {
             // Check if ANY claims exist for this order
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
             $check_claims = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT * FROM {$this->table_claims} WHERE order_id = %d",
+                    'SELECT * FROM %i WHERE order_id = %d',
+                    $this->table_claims,
                     $order_id
                 )
             );
@@ -132,10 +140,11 @@ class Claim_Desk_DB_Handler {
                  // Check items for first claim
                  $first_claim_id = (int) $check_claims[0]->id;
 
-                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                  $check_items = $wpdb->get_results(
                     $wpdb->prepare(
-                        "SELECT * FROM {$this->table_items} WHERE claim_id = %d",
+                        'SELECT * FROM %i WHERE claim_id = %d',
+                        $this->table_items,
                         $first_claim_id
                     )
                 );
@@ -185,10 +194,11 @@ class Claim_Desk_DB_Handler {
 
         $claim_id = absint($claim_id);
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table_attachments} WHERE claim_id = %d ORDER BY uploaded_at ASC",
+                'SELECT * FROM %i WHERE claim_id = %d ORDER BY uploaded_at ASC',
+                $this->table_attachments,
                 $claim_id
             )
         );
@@ -207,10 +217,11 @@ class Claim_Desk_DB_Handler {
             return null;
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         return $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table_claims} WHERE id = %d",
+                'SELECT * FROM %i WHERE id = %d',
+                $this->table_claims,
                 $claim_id
             )
         );
@@ -229,10 +240,11 @@ class Claim_Desk_DB_Handler {
             return array();
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table_items} WHERE claim_id = %d ORDER BY id ASC",
+                'SELECT * FROM %i WHERE claim_id = %d ORDER BY id ASC',
+                $this->table_items,
                 $claim_id
             )
         );
@@ -330,16 +342,17 @@ class Claim_Desk_DB_Handler {
 
         $limit = max( 1, absint( $limit ) );
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $rows = $wpdb->get_col(
             $wpdb->prepare(
                 "SELECT id
-                FROM {$this->table_claims}
+                FROM %i
                 WHERE reminder_sent = 0
                 AND status NOT IN ('approved', 'rejected', 'completed', 'closed')
                 AND last_status_update_at <= %s
                 ORDER BY last_status_update_at ASC
                 LIMIT %d",
+                $this->table_claims,
                 $threshold_mysql,
                 $limit
             )
