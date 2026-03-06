@@ -551,8 +551,9 @@ class Claim_Desk_Public {
 	private function get_claim_status_map( $order_id ) {
 		global $wpdb;
 
-		$claims_table = $wpdb->prefix . 'cd_claims';
-		$items_table  = $wpdb->prefix . 'cd_claim_items';
+		$claims_table  = esc_sql( $wpdb->prefix . 'cd_claims' );
+		$items_table   = esc_sql( $wpdb->prefix . 'cd_claim_items' );
+		$order_id_safe = absint( $order_id );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$rows = $wpdb->get_results(
@@ -564,7 +565,7 @@ class Claim_Desk_Public {
 				ORDER BY c.updated_at DESC, c.id DESC',
 				$items_table,
 				$claims_table,
-				absint( $order_id )
+				$order_id_safe
 			)
 		);
 
