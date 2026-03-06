@@ -45,8 +45,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
     public function prepare_items() {
         global $wpdb;
 
-        $table_name  = $wpdb->prefix . 'cd_claims';
-        $table_items = $wpdb->prefix . 'cd_claim_items';
+        $table_name  = esc_sql( $wpdb->prefix . 'cd_claims' );
+        $table_items = esc_sql( $wpdb->prefix . 'cd_claim_items' );
         
         $per_page = 20;
         $current_page = $this->get_pagenum();
@@ -233,8 +233,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
         if ( empty( $claim_ids ) ) return;
 
         global $wpdb;
-        $table_claims = $wpdb->prefix . 'cd_claims';
-        $table_items = $wpdb->prefix . 'cd_claim_items';
+        $table_claims = esc_sql( $wpdb->prefix . 'cd_claims' );
+        $table_items  = esc_sql( $wpdb->prefix . 'cd_claim_items' );
 
         if ( 'delete' === $action ) {
             foreach ( $claim_ids as $id ) {
