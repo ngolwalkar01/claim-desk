@@ -20,9 +20,9 @@ echo wp_kses_post( sprintf( "Current status: %s\n", sanitize_text_field( ucfirst
 echo wp_kses_post( sprintf( "Admin note: %s\n\n", ! empty( $claim['admin_remarks'] ) ? sanitize_textarea_field( (string) $claim['admin_remarks'] ) : '-' ) );
 
 echo "Products:\n";
-foreach ( $claim['items'] as $item ) {
-	echo wp_kses_post( sprintf( "- Product: %s\n", sanitize_text_field( (string) $item['product_name'] ) ) );
-	echo wp_kses_post( sprintf( "  Link: %s\n", esc_url_raw( (string) $item['product_url'] ) ) );
-	echo wp_kses_post( sprintf( "  Claimed quantity: %d\n", absint( $item['qty_claimed'] ) ) );
-	echo wp_kses_post( sprintf( "  SKU: %s\n", ! empty( $item['product_sku'] ) ? sanitize_text_field( (string) $item['product_sku'] ) : '-' ) );
+foreach ( $claim['items'] as $claim_desk_item ) {
+	echo wp_kses_post( sprintf( "- Product: %s\n", sanitize_text_field( (string) $claim_desk_item['product_name'] ) ) );
+	echo wp_kses_post( sprintf( "  Link: %s\n", esc_url_raw( (string) $claim_desk_item['product_url'] ) ) );
+	echo wp_kses_post( sprintf( "  Claimed quantity: %d\n", absint( $claim_desk_item['qty_claimed'] ) ) );
+	echo wp_kses_post( sprintf( "  SKU: %s\n", ! empty( $claim_desk_item['product_sku'] ) ? sanitize_text_field( (string) $claim_desk_item['product_sku'] ) : '-' ) );
 }

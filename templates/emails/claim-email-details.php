@@ -35,18 +35,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</tr>
 	</thead>
 	<tbody>
-		<?php foreach ( $claim['items'] as $item ) : ?>
+		<?php foreach ( $claim['items'] as $claim_desk_item ) : ?>
 			<tr>
-				<td><?php echo wp_kses_post( $item['product_image'] ); ?></td>
+				<td><?php echo wp_kses_post( $claim_desk_item['product_image'] ); ?></td>
 				<td>
-					<?php if ( ! empty( $item['product_url'] ) ) : ?>
-						<a href="<?php echo esc_url( $item['product_url'] ); ?>"><?php echo esc_html( $item['product_name'] ); ?></a>
+					<?php if ( ! empty( $claim_desk_item['product_url'] ) ) : ?>
+						<a href="<?php echo esc_url( $claim_desk_item['product_url'] ); ?>"><?php echo esc_html( $claim_desk_item['product_name'] ); ?></a>
 					<?php else : ?>
-						<?php echo esc_html( $item['product_name'] ); ?>
+						<?php echo esc_html( $claim_desk_item['product_name'] ); ?>
 					<?php endif; ?>
 				</td>
-				<td><?php echo esc_html( absint( $item['qty_claimed'] ) ); ?></td>
-				<td><?php echo ! empty( $item['product_sku'] ) ? esc_html( $item['product_sku'] ) : '&mdash;'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
+				<td><?php echo esc_html( absint( $claim_desk_item['qty_claimed'] ) ); ?></td>
+				<td><?php echo ! empty( $claim_desk_item['product_sku'] ) ? esc_html( $claim_desk_item['product_sku'] ) : '&mdash;'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
 			</tr>
 		<?php endforeach; ?>
 	</tbody>
