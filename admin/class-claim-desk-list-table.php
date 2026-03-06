@@ -68,14 +68,17 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         // Query
         // Count total items
-        $table_name  = esc_sql( $table_name );
-        $table_items = esc_sql( $table_items );
         $cache_key_total = 'cd_claims_total_count';
         $total_items = wp_cache_get( $cache_key_total, 'claim-desk' );
 
         if ( false === $total_items ) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $total_items = (int) $wpdb->get_var( "SELECT COUNT(id) FROM {$table_name}" );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $total_items = (int) $wpdb->get_var(
+                $wpdb->prepare(
+                    'SELECT COUNT(id) FROM %i',
+                    $table_name
+                )
+            );
             wp_cache_set( $cache_key_total, $total_items, 'claim-desk', 300 );
         }
         
@@ -90,19 +93,34 @@ class Claim_Desk_List_Table extends WP_List_Table {
         $items = wp_cache_get( $cache_key_items, 'claim-desk' );
 
         if ( false === $items ) {
-            // WordPress prepare() cannot safely quote 'ORDER BY column_name' dynamically, so we must interpolate the sanitized variables and prepare the limits.
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $items = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT c.*, ci.product_id
-                    FROM {$table_name} c
+            $order_query = ( 'ASC' === $order ) ? 'ASC' : 'DESC';
+            $query       = ( 'ASC' === $order_query )
+                ? 'SELECT c.*, ci.product_id
+                    FROM %i c
                     LEFT JOIN (
                         SELECT claim_id, MAX(product_id) AS product_id
-                        FROM {$table_items}
+                        FROM %i
                         GROUP BY claim_id
                     ) ci ON ci.claim_id = c.id
-                    ORDER BY c.{$orderby} {$order}
-                    LIMIT %d OFFSET %d",
+                    ORDER BY c.%i ASC
+                    LIMIT %d OFFSET %d'
+                : 'SELECT c.*, ci.product_id
+                    FROM %i c
+                    LEFT JOIN (
+                        SELECT claim_id, MAX(product_id) AS product_id
+                        FROM %i
+                        GROUP BY claim_id
+                    ) ci ON ci.claim_id = c.id
+                    ORDER BY c.%i DESC
+                    LIMIT %d OFFSET %d';
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $items = $wpdb->get_results(
+                $wpdb->prepare(
+                    $query,
+                    $table_name,
+                    $table_items,
+                    $orderby,
                     $per_page,
                     $offset
                 )
