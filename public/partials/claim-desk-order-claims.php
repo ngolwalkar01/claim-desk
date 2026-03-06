@@ -33,7 +33,7 @@ if ( ! is_array( $claim_desk_resolutions ) ) {
 	$claim_desk_resolutions = array();
 }
 
-$claim_type_catalog = array(
+$claim_desk_type_catalog = array(
 	'return'   => array(
 		'label'  => __( 'Return', 'claim-desk' ),
 		'detail' => __( 'Send item back and get your refund.', 'claim-desk' ),
@@ -51,10 +51,10 @@ $claim_type_catalog = array(
 	),
 );
 
-$enabled_claim_types = array();
-foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
-	if ( ! empty( $claim_desk_resolutions[ $claim_type_key ] ) && isset( $claim_type_catalog[ $claim_type_key ] ) ) {
-		$enabled_claim_types[ $claim_type_key ] = $claim_type_catalog[ $claim_type_key ];
+$claim_desk_enabled_claim_types = array();
+foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_desk_type_key ) {
+	if ( ! empty( $claim_desk_resolutions[ $claim_desk_type_key ] ) && isset( $claim_desk_type_catalog[ $claim_desk_type_key ] ) ) {
+		$claim_desk_enabled_claim_types[ $claim_desk_type_key ] = $claim_desk_type_catalog[ $claim_desk_type_key ];
 	}
 }
 ?>
@@ -63,74 +63,74 @@ foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
 	<p class="cd-order-claims__subtitle"><?php esc_html_e( 'Create a separate claim for each product.', 'claim-desk' ); ?></p>
 
 	<div class="cd-order-claims__list" role="list">
-		<?php foreach ( $claim_items as $claim_item ) : ?>
+		<?php foreach ( $claim_items as $claim_desk_item ) : ?>
 			<?php
-			$has_available  = $claim_item['qty_available'] > 0;
-			$claim_status   = isset( $claim_item['claim_status'] ) ? sanitize_key( $claim_item['claim_status'] ) : '';
-			$window_allows_claims = ! empty( $claim_item['window_allows_claims'] );
-			$window_message = isset( $claim_item['window_message'] ) ? sanitize_text_field( $claim_item['window_message'] ) : '';
-			$badge_class    = 'is-not-eligible';
-			$badge_text     = __( 'Not Eligible', 'claim-desk' );
-			$locked_by_status = in_array( $claim_status, array( 'pending', 'approved', 'rejected' ), true );
-			$can_start_claim  = $has_available && ! $locked_by_status && $window_allows_claims;
+			$claim_desk_has_available      = $claim_desk_item['qty_available'] > 0;
+			$claim_desk_status             = isset( $claim_desk_item['claim_status'] ) ? sanitize_key( $claim_desk_item['claim_status'] ) : '';
+			$claim_desk_window_allows      = ! empty( $claim_desk_item['window_allows_claims'] );
+			$claim_desk_window_message     = isset( $claim_desk_item['window_message'] ) ? sanitize_text_field( $claim_desk_item['window_message'] ) : '';
+			$claim_desk_badge_class        = 'is-not-eligible';
+			$claim_desk_badge_text         = __( 'Not Eligible', 'claim-desk' );
+			$claim_desk_locked_by_status   = in_array( $claim_desk_status, array( 'pending', 'approved', 'rejected' ), true );
+			$claim_desk_can_start_claim    = $claim_desk_has_available && ! $claim_desk_locked_by_status && $claim_desk_window_allows;
 
-			if ( 'pending' === $claim_status ) {
-				$badge_class = 'is-pending';
-				$badge_text  = __( 'Already claimed waiting for the merchant response', 'claim-desk' );
-			} elseif ( 'approved' === $claim_status ) {
-				$badge_class = 'is-approved';
-				$badge_text  = __( 'Approved', 'claim-desk' );
-			} elseif ( 'rejected' === $claim_status ) {
-				$badge_class = 'is-rejected';
-				$badge_text  = __( 'Rejected', 'claim-desk' );
-			} elseif ( $has_available && $window_allows_claims ) {
-				$badge_class = 'is-eligible';
-				$badge_text  = __( 'Eligible', 'claim-desk' );
+			if ( 'pending' === $claim_desk_status ) {
+				$claim_desk_badge_class = 'is-pending';
+				$claim_desk_badge_text  = __( 'Already claimed waiting for the merchant response', 'claim-desk' );
+			} elseif ( 'approved' === $claim_desk_status ) {
+				$claim_desk_badge_class = 'is-approved';
+				$claim_desk_badge_text  = __( 'Approved', 'claim-desk' );
+			} elseif ( 'rejected' === $claim_desk_status ) {
+				$claim_desk_badge_class = 'is-rejected';
+				$claim_desk_badge_text  = __( 'Rejected', 'claim-desk' );
+			} elseif ( $claim_desk_has_available && $claim_desk_window_allows ) {
+				$claim_desk_badge_class = 'is-eligible';
+				$claim_desk_badge_text  = __( 'Eligible', 'claim-desk' );
 			}
 			?>
 			<div
-				class="cd-claim-row<?php echo $can_start_claim ? '' : ' is-locked'; ?>"
+				class="cd-claim-row<?php echo $claim_desk_can_start_claim ? '' : ' is-locked'; ?>"
 				role="listitem"
-				data-order-item-id="<?php echo esc_attr( $claim_item['order_item_id'] ); ?>"
-				data-product-id="<?php echo esc_attr( $claim_item['product_id'] ); ?>"
-				data-product-name="<?php echo esc_attr( $claim_item['name'] ); ?>"
-				data-product-image="<?php echo esc_url( $claim_item['image'] ); ?>"
-				data-qty-available="<?php echo esc_attr( $claim_item['qty_available'] ); ?>"
-				data-claim-status="<?php echo esc_attr( $claim_status ); ?>"
-				data-can-claim="<?php echo $can_start_claim ? '1' : '0'; ?>"
+				data-order-item-id="<?php echo esc_attr( $claim_desk_item['order_item_id'] ); ?>"
+				data-product-id="<?php echo esc_attr( $claim_desk_item['product_id'] ); ?>"
+				data-product-name="<?php echo esc_attr( $claim_desk_item['name'] ); ?>"
+				data-product-image="<?php echo esc_url( $claim_desk_item['image'] ); ?>"
+				data-qty-available="<?php echo esc_attr( $claim_desk_item['qty_available'] ); ?>"
+				data-claim-status="<?php echo esc_attr( $claim_desk_status ); ?>"
+				data-can-claim="<?php echo $claim_desk_can_start_claim ? '1' : '0'; ?>"
 			>
 				<div class="cd-claim-row__product">
-					<img class="cd-claim-row__image" src="<?php echo esc_url( $claim_item['image'] ); ?>" alt="">
+					<img class="cd-claim-row__image" src="<?php echo esc_url( $claim_desk_item['image'] ); ?>" alt="">
 					<div>
-						<div class="cd-claim-row__name"><?php echo esc_html( $claim_item['name'] ); ?></div>
+						<div class="cd-claim-row__name"><?php echo esc_html( $claim_desk_item['name'] ); ?></div>
 						<div class="cd-claim-row__meta">
 							<?php
 							printf(
 								/* translators: 1: purchased qty, 2: available qty */
 								esc_html__( 'Purchased: %1$d | Available to claim: %2$d', 'claim-desk' ),
-								absint( $claim_item['qty_total'] ),
-								absint( $claim_item['qty_available'] )
+								absint( $claim_desk_item['qty_total'] ),
+								absint( $claim_desk_item['qty_available'] )
 							);
 							?>
 						</div>
 						<div class="cd-claim-row__badges">
-							<span class="cd-status-badge <?php echo esc_attr( $badge_class ); ?>"><?php echo esc_html( $badge_text ); ?></span>
+							<span class="cd-status-badge <?php echo esc_attr( $claim_desk_badge_class ); ?>"><?php echo esc_html( $claim_desk_badge_text ); ?></span>
 						</div>
 					</div>
 				</div>
 
 				<div class="cd-claim-row__actions">
-					<label class="screen-reader-text" for="cd-qty-<?php echo esc_attr( $claim_item['order_item_id'] ); ?>">
+					<label class="screen-reader-text" for="cd-qty-<?php echo esc_attr( $claim_desk_item['order_item_id'] ); ?>">
 						<?php esc_html_e( 'Claim quantity', 'claim-desk' ); ?>
 					</label>
 					<select
-						id="cd-qty-<?php echo esc_attr( $claim_item['order_item_id'] ); ?>"
+						id="cd-qty-<?php echo esc_attr( $claim_desk_item['order_item_id'] ); ?>"
 						class="cd-claim-qty"
-						<?php disabled( ! $can_start_claim ); ?>
+						<?php disabled( ! $claim_desk_can_start_claim ); ?>
 					>
 						<option value="0"><?php esc_html_e( 'Select qty', 'claim-desk' ); ?></option>
-						<?php for ( $qty = 1; $qty <= $claim_item['qty_available']; $qty++ ) : ?>
-							<option value="<?php echo esc_attr( $qty ); ?>"><?php echo esc_html( $qty ); ?></option>
+						<?php for ( $claim_desk_qty = 1; $claim_desk_qty <= $claim_desk_item['qty_available']; $claim_desk_qty++ ) : ?>
+							<option value="<?php echo esc_attr( $claim_desk_qty ); ?>"><?php echo esc_html( $claim_desk_qty ); ?></option>
 						<?php endfor; ?>
 					</select>
 
@@ -140,15 +140,15 @@ foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
 				</div>
 
 				<div class="cd-claim-row__notice" aria-live="polite">
-					<?php if ( 'pending' === $claim_status ) : ?>
+					<?php if ( 'pending' === $claim_desk_status ) : ?>
 						<span class="cd-claim-row__notice--success"><?php esc_html_e( 'Already claimed waiting for the merchant response.', 'claim-desk' ); ?></span>
-					<?php elseif ( 'approved' === $claim_status ) : ?>
+					<?php elseif ( 'approved' === $claim_desk_status ) : ?>
 						<span class="cd-claim-row__notice--success"><?php esc_html_e( 'Claim approved by merchant.', 'claim-desk' ); ?></span>
-					<?php elseif ( 'rejected' === $claim_status ) : ?>
+					<?php elseif ( 'rejected' === $claim_desk_status ) : ?>
 						<span class="cd-claim-row__notice--error"><?php esc_html_e( 'Claim rejected by merchant.', 'claim-desk' ); ?></span>
-					<?php elseif ( ! $window_allows_claims && $window_message ) : ?>
-						<span class="cd-claim-row__notice--error"><?php echo esc_html( $window_message ); ?></span>
-					<?php elseif ( ! $has_available ) : ?>
+					<?php elseif ( ! $claim_desk_window_allows && $claim_desk_window_message ) : ?>
+						<span class="cd-claim-row__notice--error"><?php echo esc_html( $claim_desk_window_message ); ?></span>
+					<?php elseif ( ! $claim_desk_has_available ) : ?>
 						<span class="cd-claim-row__notice--success"><?php esc_html_e( 'Claim already submitted for this product.', 'claim-desk' ); ?></span>
 					<?php endif; ?>
 				</div>
@@ -170,22 +170,22 @@ foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
 					</label>
 					<input type="hidden" id="cd-claim-type" required>
 					<div class="cd-claim-type-cards" role="radiogroup" aria-label="<?php esc_attr_e( 'Select claim type', 'claim-desk' ); ?>">
-						<?php if ( empty( $enabled_claim_types ) ) : ?>
+						<?php if ( empty( $claim_desk_enabled_claim_types ) ) : ?>
 							<p class="cd-claim-row__notice--error"><?php esc_html_e( 'No claim types are currently enabled by the store admin.', 'claim-desk' ); ?></p>
 						<?php else : ?>
-							<?php foreach ( $enabled_claim_types as $claim_type_value => $claim_type_data ) : ?>
+							<?php foreach ( $claim_desk_enabled_claim_types as $claim_desk_type_value => $claim_desk_type_data ) : ?>
 								<button
 									type="button"
 									class="cd-claim-type-card"
-									data-value="<?php echo esc_attr( $claim_type_value ); ?>"
-									data-label="<?php echo esc_attr( $claim_type_data['label'] ); ?>"
+									data-value="<?php echo esc_attr( $claim_desk_type_value ); ?>"
+									data-label="<?php echo esc_attr( $claim_desk_type_data['label'] ); ?>"
 									role="radio"
 									aria-checked="false"
 								>
-									<span class="cd-claim-type-card__icon" aria-hidden="true"><?php echo wp_kses_post( $claim_type_data['icon'] ); ?></span>
+									<span class="cd-claim-type-card__icon" aria-hidden="true"><?php echo wp_kses_post( $claim_desk_type_data['icon'] ); ?></span>
 									<span class="cd-claim-type-card__content">
-										<span class="cd-claim-type-card__title"><?php echo esc_html( $claim_type_data['label'] ); ?></span>
-										<span class="cd-claim-type-card__detail"><?php echo esc_html( $claim_type_data['detail'] ); ?></span>
+										<span class="cd-claim-type-card__title"><?php echo esc_html( $claim_desk_type_data['label'] ); ?></span>
+										<span class="cd-claim-type-card__detail"><?php echo esc_html( $claim_desk_type_data['detail'] ); ?></span>
 									</span>
 								</button>
 							<?php endforeach; ?>
@@ -200,8 +200,8 @@ foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
 					</label>
 					<select id="cd-problem-type" required>
 						<option value=""><?php esc_html_e( 'Select problem type', 'claim-desk' ); ?></option>
-						<?php foreach ( (array) Claim_Desk_Config_Manager::get_problems() as $problem ) : ?>
-							<option value="<?php echo esc_attr( $problem['value'] ); ?>"><?php echo esc_html( $problem['label'] ); ?></option>
+						<?php foreach ( (array) Claim_Desk_Config_Manager::get_problems() as $claim_desk_problem ) : ?>
+							<option value="<?php echo esc_attr( $claim_desk_problem['value'] ); ?>"><?php echo esc_html( $claim_desk_problem['label'] ); ?></option>
 						<?php endforeach; ?>
 					</select>
 				</div>
@@ -234,8 +234,8 @@ foreach ( array( 'return', 'exchange', 'coupon' ) as $claim_type_key ) {
 					</label>
 					<select id="cd-product-condition" required>
 						<option value=""><?php esc_html_e( 'Select condition', 'claim-desk' ); ?></option>
-						<?php foreach ( $claim_desk_conditions as $condition ) : ?>
-							<option value="<?php echo esc_attr( isset( $condition['value'] ) ? $condition['value'] : '' ); ?>"><?php echo esc_html( isset( $condition['label'] ) ? $condition['label'] : '' ); ?></option>
+						<?php foreach ( $claim_desk_conditions as $claim_desk_condition ) : ?>
+							<option value="<?php echo esc_attr( isset( $claim_desk_condition['value'] ) ? $claim_desk_condition['value'] : '' ); ?>"><?php echo esc_html( isset( $claim_desk_condition['label'] ) ? $claim_desk_condition['label'] : '' ); ?></option>
 						<?php endforeach; ?>
 					</select>
 				</div>
