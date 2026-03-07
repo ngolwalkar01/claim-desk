@@ -45,8 +45,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
     public function prepare_items() {
         global $wpdb;
 
-        $table_name  = esc_sql( $wpdb->prefix . 'cd_claims' );
-        $table_items = esc_sql( $wpdb->prefix . 'cd_claim_items' );
+        $table_name  = $wpdb->prefix . 'cd_claims';
+        $table_items = $wpdb->prefix . 'cd_claim_items';
         
         $per_page = 20;
         $current_page = $this->get_pagenum();
@@ -73,12 +73,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         if ( false === $total_items ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $total_items = (int) $wpdb->get_var(
-                $wpdb->prepare(
-                    'SELECT COUNT(id) FROM %i',
-                    $table_name
-                )
-            );
+            $total_items = (int) $wpdb->get_var( "SELECT COUNT(id) FROM `{$table_name}`" );
             wp_cache_set( $cache_key_total, $total_items, 'claim-desk', 300 );
         }
         
@@ -93,38 +88,22 @@ class Claim_Desk_List_Table extends WP_List_Table {
         $items = wp_cache_get( $cache_key_items, 'claim-desk' );
 
         if ( false === $items ) {
-            $order_query = ( 'ASC' === $order ) ? 'ASC' : 'DESC';
-            $query       = ( 'ASC' === $order_query )
-                ? 'SELECT c.*, ci.product_id
-                    FROM %i c
-                    LEFT JOIN (
-                        SELECT claim_id, MAX(product_id) AS product_id
-                        FROM %i
-                        GROUP BY claim_id
-                    ) ci ON ci.claim_id = c.id
-                    ORDER BY c.%i ASC
-                    LIMIT %d OFFSET %d'
-                : 'SELECT c.*, ci.product_id
-                    FROM %i c
-                    LEFT JOIN (
-                        SELECT claim_id, MAX(product_id) AS product_id
-                        FROM %i
-                        GROUP BY claim_id
-                    ) ci ON ci.claim_id = c.id
-                    ORDER BY c.%i DESC
-                    LIMIT %d OFFSET %d';
+            $query = $wpdb->prepare(
+                "SELECT c.*, ci.product_id
+                FROM `{$table_name}` c
+                LEFT JOIN (
+                    SELECT claim_id, MAX(product_id) AS product_id
+                    FROM `{$table_items}`
+                    GROUP BY claim_id
+                ) ci ON ci.claim_id = c.id
+                ORDER BY c.`{$orderby}` {$order}
+                LIMIT %d OFFSET %d",
+                $per_page,
+                $offset
+            );
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $items = $wpdb->get_results(
-                $wpdb->prepare(
-                    $query,
-                    $table_name,
-                    $table_items,
-                    $orderby,
-                    $per_page,
-                    $offset
-                )
-            );
+            $items = $wpdb->get_results( $query );
             wp_cache_set( $cache_key_items, $items, 'claim-desk', 300 );
         }
 
