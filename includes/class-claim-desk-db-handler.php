@@ -115,12 +115,10 @@ class Claim_Desk_DB_Handler {
         $results = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT i.order_item_id, i.qty_claimed, c.status
-                FROM %i i
-                JOIN %i c ON i.claim_id = c.id
+                FROM `{$this->table_items}` i
+                JOIN `{$this->table_claims}` c ON i.claim_id = c.id
                 WHERE c.order_id = %d
                 AND c.status != 'rejected'",
-                $this->table_items,
-                $this->table_claims,
                 $order_id
             )
         );
@@ -130,8 +128,7 @@ class Claim_Desk_DB_Handler {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
             $check_claims = $wpdb->get_results(
                 $wpdb->prepare(
-                    'SELECT * FROM %i WHERE order_id = %d',
-                    $this->table_claims,
+                    "SELECT * FROM `{$this->table_claims}` WHERE order_id = %d",
                     $order_id
                 )
             );
@@ -143,8 +140,7 @@ class Claim_Desk_DB_Handler {
                  // phpcs:ignore WordPress.DB.DirectDatabaseQuery
                  $check_items = $wpdb->get_results(
                     $wpdb->prepare(
-                        'SELECT * FROM %i WHERE claim_id = %d',
-                        $this->table_items,
+                        "SELECT * FROM `{$this->table_items}` WHERE claim_id = %d",
                         $first_claim_id
                     )
                 );
@@ -197,8 +193,7 @@ class Claim_Desk_DB_Handler {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         return $wpdb->get_results(
             $wpdb->prepare(
-                'SELECT * FROM %i WHERE claim_id = %d ORDER BY uploaded_at ASC',
-                $this->table_attachments,
+                "SELECT * FROM `{$this->table_attachments}` WHERE claim_id = %d ORDER BY uploaded_at ASC",
                 $claim_id
             )
         );
@@ -220,8 +215,7 @@ class Claim_Desk_DB_Handler {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         return $wpdb->get_row(
             $wpdb->prepare(
-                'SELECT * FROM %i WHERE id = %d',
-                $this->table_claims,
+                "SELECT * FROM `{$this->table_claims}` WHERE id = %d",
                 $claim_id
             )
         );
@@ -243,8 +237,7 @@ class Claim_Desk_DB_Handler {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         return $wpdb->get_results(
             $wpdb->prepare(
-                'SELECT * FROM %i WHERE claim_id = %d ORDER BY id ASC',
-                $this->table_items,
+                "SELECT * FROM `{$this->table_items}` WHERE claim_id = %d ORDER BY id ASC",
                 $claim_id
             )
         );
@@ -346,13 +339,12 @@ class Claim_Desk_DB_Handler {
         $rows = $wpdb->get_col(
             $wpdb->prepare(
                 "SELECT id
-                FROM %i
+                FROM `{$this->table_claims}`
                 WHERE reminder_sent = 0
                 AND status NOT IN ('approved', 'rejected', 'completed', 'closed')
                 AND last_status_update_at <= %s
                 ORDER BY last_status_update_at ASC
                 LIMIT %d",
-                $this->table_claims,
                 $threshold_mysql,
                 $limit
             )
