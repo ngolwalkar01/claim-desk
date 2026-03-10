@@ -122,14 +122,16 @@ class Claim_Desk_Admin {
      */
     private function display_claims_list() {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        if( isset($_GET['action']) && $_GET['action'] == 'view' && isset($_GET['id']) ) {
+        $view_action = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
+        $view_id     = isset( $_GET['id'] ) ? absint( wp_unslash( $_GET['id'] ) ) : 0;
+
+        if ( 'view' === $view_action && $view_id ) {
             // Verify nonce before processing GET data
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
             if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'view_claim' ) ) {
                 wp_die( 'Security check failed' );
             }
-            // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $this->display_claim_detail( intval($_GET['id']) );
+            $this->display_claim_detail( $view_id );
         } else {
             require_once plugin_dir_path( __FILE__ ) . 'class-claim-desk-list-table.php';
             $list_table = new Claim_Desk_List_Table();
@@ -667,7 +669,7 @@ class Claim_Desk_Admin {
             wp_die( 'Permission denied' );
         }
 
-        $claim_id = isset( $_POST['claim_id'] ) ? intval( wp_unslash( $_POST['claim_id'] ) ) : 0;
+        $claim_id = isset( $_POST['claim_id'] ) ? absint( wp_unslash( $_POST['claim_id'] ) ) : 0;
         $status   = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '';
 
         if ( ! $claim_id || ! in_array( $status, array( 'approved', 'rejected' ) ) ) {

@@ -9,7 +9,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-$claim_desk_order_id = isset( $_GET['order_id'] ) ? intval( wp_unslash( $_GET['order_id'] ) ) : 0;
+$claim_desk_order_id = isset( $_GET['order_id'] ) ? absint( wp_unslash( $_GET['order_id'] ) ) : 0;
 // Basic validation
 if ( ! $claim_desk_order_id ) {
     echo '<div class="container"><p>Invalid Order ID.</p></div>';

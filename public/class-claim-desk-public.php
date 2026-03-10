@@ -279,12 +279,40 @@ class Claim_Desk_Public {
 			wp_send_json_error( __( 'Invalid claim type.', 'claim-desk' ) );
 		}
 
+		$allowed_problem_types = array_map(
+			static function ( $problem ) {
+				return isset( $problem['value'] ) ? sanitize_key( $problem['value'] ) : '';
+			},
+			(array) Claim_Desk_Config_Manager::get_problems()
+		);
+		$allowed_problem_types = array_filter( array_unique( $allowed_problem_types ) );
+
+		$allowed_conditions = array_map(
+			static function ( $condition ) {
+				return isset( $condition['value'] ) ? sanitize_key( $condition['value'] ) : '';
+			},
+			(array) Claim_Desk_Config_Manager::get_conditions()
+		);
+		$allowed_conditions = array_filter( array_unique( $allowed_conditions ) );
+
+		$allowed_refund_methods = array( 'original', 'store-credit', 'bank-transfer' );
+
 		if ( '' === $problem_type || '' === $description || '' === $refund_method ) {
 			wp_send_json_error( __( 'Please complete all required fields.', 'claim-desk' ) );
 		}
 
+		if ( ! in_array( $problem_type, $allowed_problem_types, true ) ) {
+			wp_send_json_error( __( 'Invalid problem type.', 'claim-desk' ) );
+		}
+
 		if ( '' === $product_condition ) {
 			$product_condition = 'not-specified';
+		} elseif ( ! in_array( $product_condition, $allowed_conditions, true ) ) {
+			wp_send_json_error( __( 'Invalid product condition.', 'claim-desk' ) );
+		}
+
+		if ( ! in_array( $refund_method, $allowed_refund_methods, true ) ) {
+			wp_send_json_error( __( 'Invalid refund method.', 'claim-desk' ) );
 		}
 
 		$order = wc_get_order( $order_id );
