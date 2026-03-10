@@ -47,7 +47,11 @@ class Claim_Desk_Admin {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_styles() {
+	public function enqueue_styles( $hook_suffix ) {
+		if ( ! $this->should_enqueue_admin_assets( $hook_suffix ) ) {
+			return;
+		}
+
 		$style_path = plugin_dir_path( __FILE__ ) . 'css/claim-desk-admin.css';
 		$style_ver  = file_exists( $style_path ) ? (string) filemtime( $style_path ) : $this->version;
 		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/claim-desk-admin.css', array(), $style_ver, 'all' );
@@ -59,10 +63,14 @@ class Claim_Desk_Admin {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_scripts() {
+	public function enqueue_scripts( $hook_suffix ) {
+		if ( ! $this->should_enqueue_admin_assets( $hook_suffix ) ) {
+			return;
+		}
+
 		$script_path = plugin_dir_path( __FILE__ ) . 'js/claim-desk-admin.js';
 		$script_ver  = file_exists( $script_path ) ? (string) filemtime( $script_path ) : $this->version;
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/claim-desk-admin.js', array( 'jquery' ), $script_ver, false );
+		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/claim-desk-admin.js', array( 'jquery' ), $script_ver, true );
 
         // Localize script for AJAX
         wp_localize_script( $this->plugin_name, 'claim_desk_admin', array(
@@ -70,6 +78,10 @@ class Claim_Desk_Admin {
             'nonce'    => wp_create_nonce( 'claim_desk_admin_nonce' )
         ));
 
+	}
+
+	private function should_enqueue_admin_assets( $hook_suffix ) {
+		return 'woocommerce_page_claim-desk' === $hook_suffix;
 	}
 
     /**
@@ -269,8 +281,6 @@ class Claim_Desk_Admin {
                     echo '</div>';
                     echo '</div>';
                     
-                    // Hidden data for JS
-                    echo '<script type="application/json" id="cd-attachments-data">';
                     $attachments_data = array();
                     foreach ($attachments as $idx => $attachment) {
                         $file_url = wp_upload_dir()['baseurl'] . $attachment->file_path;
@@ -282,8 +292,11 @@ class Claim_Desk_Admin {
                             'date' => $attachment->uploaded_at
                         );
                     }
-                    echo json_encode($attachments_data);
-                    echo '</script>';
+                    wp_add_inline_script(
+                        $this->plugin_name,
+                        'window.claimDeskAdminAttachments = ' . wp_json_encode( $attachments_data ) . ';',
+                        'before'
+                    );
                 } else {
                     echo '<p style="color: #757575;"><em>No images uploaded</em></p>';
                 }
@@ -346,307 +359,6 @@ class Claim_Desk_Admin {
 
         </div>
 
-        <style>
-            .cd-status-badge { padding: 5px 10px; border-radius: 4px; color: #fff; font-size: 12px; margin-left: 10px; }
-            .cd-status-badge.pending { background: orange; }
-            .cd-status-badge.approved { background: green; }
-            .cd-status-badge.rejected { background: red; }
-
-            /* Gallery Styles */
-            .cd-gallery-section {
-                margin: 20px 0;
-            }
-
-            .cd-gallery-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                gap: 12px;
-                margin-top: 15px;
-            }
-
-            .cd-gallery-thumb {
-                position: relative;
-                overflow: hidden;
-                border-radius: 6px;
-                cursor: pointer;
-                border: 2px solid #dcdcde;
-                background: #f5f5f5;
-                transition: all 0.3s ease;
-            }
-
-            .cd-gallery-thumb:hover {
-                border-color: #0073aa;
-                box-shadow: 0 2px 8px rgba(0, 115, 170, 0.2);
-                transform: scale(1.05);
-            }
-
-            .cd-gallery-thumb img {
-                width: 100%;
-                height: 120px;
-                object-fit: cover;
-                display: block;
-            }
-
-            .cd-thumb-info {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: rgba(0, 0, 0, 0.7);
-                color: #fff;
-                padding: 6px;
-                font-size: 11px;
-                max-height: 50%;
-                overflow: hidden;
-            }
-
-            .cd-filename {
-                display: block;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            .cd-filesize {
-                display: block;
-                font-size: 10px;
-                opacity: 0.8;
-            }
-
-            /* Lightbox Modal Styles */
-            .cd-lightbox-modal {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.95);
-                z-index: 10000;
-                align-items: center;
-                justify-content: center;
-                animation: cd-fade-in 0.3s ease;
-            }
-
-            .cd-lightbox-modal.active {
-                display: flex;
-            }
-
-            @keyframes cd-fade-in {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-
-            .cd-lightbox-container {
-                width: 90%;
-                max-width: 900px;
-                max-height: 90vh;
-                display: flex;
-                flex-direction: column;
-                background: #1e1e1e;
-                border-radius: 8px;
-                overflow: hidden;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-            }
-
-            .cd-lightbox-close {
-                position: absolute;
-                top: 10px;
-                right: 10px;
-                background: rgba(255, 255, 255, 0.1);
-                color: #fff;
-                border: none;
-                font-size: 40px;
-                cursor: pointer;
-                width: 50px;
-                height: 50px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 4px;
-                transition: background 0.2s;
-                z-index: 10001;
-            }
-
-            .cd-lightbox-close:hover {
-                background: rgba(255, 255, 255, 0.2);
-            }
-
-            .cd-lightbox-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 15px 20px;
-                background: #2a2a2a;
-                border-bottom: 1px solid #3a3a3a;
-            }
-
-            .cd-lightbox-info {
-                display: flex;
-                gap: 15px;
-                align-items: center;
-                color: #fff;
-            }
-
-            .cd-current-index {
-                font-size: 14px;
-                opacity: 0.9;
-            }
-
-            .cd-image-name {
-                font-size: 14px;
-                max-width: 300px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                opacity: 0.9;
-            }
-
-            .cd-lightbox-controls {
-                display: flex;
-                gap: 10px;
-                align-items: center;
-            }
-
-            .cd-zoom-btn, .cd-reset-btn {
-                background: #0073aa;
-                color: #fff;
-                border: none;
-                width: 36px;
-                height: 36px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 18px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: background 0.2s;
-            }
-
-            .cd-zoom-btn:hover, .cd-reset-btn:hover {
-                background: #005a87;
-            }
-
-            .cd-zoom-btn:active, .cd-reset-btn:active {
-                transform: scale(0.95);
-            }
-
-            .cd-zoom-level {
-                color: #fff;
-                font-size: 12px;
-                min-width: 40px;
-                text-align: center;
-            }
-
-            .cd-reset-btn {
-                font-size: 12px;
-                width: auto;
-                padding: 0 8px;
-            }
-
-            .cd-lightbox-body {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex: 1;
-                position: relative;
-                overflow: hidden;
-                background: #000;
-            }
-
-            .cd-lightbox-image-container {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: auto;
-            }
-
-            .cd-lightbox-image {
-                max-width: 100%;
-                max-height: 100%;
-                object-fit: contain;
-                cursor: zoom-in;
-                transition: transform 0.3s ease;
-            }
-
-            .cd-nav-btn {
-                position: absolute;
-                top: 50%;
-                transform: translateY(-50%);
-                background: rgba(255, 255, 255, 0.2);
-                color: #fff;
-                border: none;
-                width: 50px;
-                height: 50px;
-                font-size: 30px;
-                cursor: pointer;
-                border-radius: 4px;
-                transition: background 0.2s;
-                z-index: 10;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .cd-nav-btn:hover {
-                background: rgba(255, 255, 255, 0.4);
-            }
-
-            .cd-nav-prev {
-                left: 15px;
-            }
-
-            .cd-nav-next {
-                right: 15px;
-            }
-
-            .cd-lightbox-footer {
-                display: flex;
-                gap: 20px;
-                padding: 12px 20px;
-                background: #2a2a2a;
-                border-top: 1px solid #3a3a3a;
-                font-size: 12px;
-                color: #aaa;
-            }
-
-            /* Responsive */
-            @media (max-width: 768px) {
-                .cd-gallery-grid {
-                    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                }
-
-                .cd-lightbox-container {
-                    width: 95%;
-                    max-height: 95vh;
-                }
-
-                .cd-nav-btn {
-                    width: 40px;
-                    height: 40px;
-                    font-size: 24px;
-                }
-
-                .cd-lightbox-close {
-                    width: 40px;
-                    height: 40px;
-                    font-size: 30px;
-                }
-
-                .cd-lightbox-header {
-                    flex-direction: column;
-                    gap: 10px;
-                    align-items: flex-start;
-                }
-
-                .cd-lightbox-controls {
-                    width: 100%;
-                    justify-content: center;
-                }
-            }
-        </style>
         <?php
     }
 

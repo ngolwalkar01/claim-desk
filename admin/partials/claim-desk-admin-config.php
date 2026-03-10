@@ -145,7 +145,7 @@ if ( ! defined( 'WPINC' ) ) {
     </div>
 
     <!-- Templates -->
-    <script type="text/template" id="tmpl-cd-row">
+    <template id="tmpl-cd-row">
         <tr class="cd-item-row">
             <td><input type="text" class="regular-text cd-item-label" value="{{label}}"></td>
             <td><input type="text" class="regular-text cd-item-value" value="{{value}}"></td>
@@ -155,5 +155,5 @@ if ( ! defined( 'WPINC' ) ) {
                 </button>
             </td>
         </tr>
-    </script>
+    </template>
 

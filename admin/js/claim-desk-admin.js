@@ -13,10 +13,7 @@
         zoomStep: 25,
 
         init: function () {
-            const dataElement = document.getElementById('cd-attachments-data');
-            if (dataElement) {
-                this.attachments = JSON.parse(dataElement.textContent);
-            }
+            this.attachments = Array.isArray(window.claimDeskAdminAttachments) ? window.claimDeskAdminAttachments : [];
 
             // Update total count
             if (this.attachments.length > 0) {

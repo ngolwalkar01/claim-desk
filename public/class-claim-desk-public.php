@@ -43,6 +43,10 @@ class Claim_Desk_Public {
 	 * Enqueue public styles.
 	 */
 	public function enqueue_styles() {
+		if ( ! $this->should_enqueue_public_assets() ) {
+			return;
+		}
+
 		$style_path = plugin_dir_path( __FILE__ ) . 'css/claim-desk-public.css';
 		$style_ver  = file_exists( $style_path ) ? (string) filemtime( $style_path ) : $this->version;
 		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/claim-desk-public.css', array(), $style_ver, 'all' );
@@ -52,6 +56,10 @@ class Claim_Desk_Public {
 	 * Enqueue public scripts.
 	 */
 	public function enqueue_scripts() {
+		if ( ! $this->should_enqueue_public_assets() ) {
+			return;
+		}
+
 		$script_path = plugin_dir_path( __FILE__ ) . 'js/claim-desk-public.js';
 		$script_ver  = file_exists( $script_path ) ? (string) filemtime( $script_path ) : $this->version;
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/claim-desk-public.js', array( 'jquery' ), $script_ver, true );
@@ -72,6 +80,21 @@ class Claim_Desk_Public {
 				),
 			)
 		);
+	}
+
+	private function should_enqueue_public_assets() {
+		if ( function_exists( 'is_account_page' ) && is_account_page() ) {
+			return true;
+		}
+
+		if ( is_singular() ) {
+			$post = get_post();
+			if ( $post && has_shortcode( $post->post_content, 'claim_desk_wizard' ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

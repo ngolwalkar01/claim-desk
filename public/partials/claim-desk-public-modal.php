@@ -56,7 +56,7 @@ if ( ! defined( 'WPINC' ) ) {
     </div>
     
     <!-- Templates -->
-    <script type="text/template" id="tmpl-cd-item-row">
+    <template id="tmpl-cd-item-row">
         <div class="cd-item-select-row" data-id="{{id}}">
             <label class="cd-item-checkbox-wrapper">
                 <input type="checkbox" class="cd-item-checkbox">
@@ -72,20 +72,20 @@ if ( ! defined( 'WPINC' ) ) {
                 <span class="cd-max-qty">/ {{max_qty}}</span>
             </div>
         </div>
-    </script>
+    </template>
 
-    <script type="text/template" id="tmpl-cd-field-text">
+    <template id="tmpl-cd-field-text">
         <div class="cd-form-group">
             <label>{{label}} {{required_mark}}</label>
             <input type="{{type}}" name="{{slug}}" class="cd-form-input" {{required}}>
         </div>
-    </script>
+    </template>
     
-    <script type="text/template" id="tmpl-cd-field-textarea">
+    <template id="tmpl-cd-field-textarea">
         <div class="cd-form-group">
             <label>{{label}} {{required_mark}}</label>
             <textarea name="{{slug}}" class="cd-form-input" rows="4" {{required}}></textarea>
         </div>
-    </script>
+    </template>
 
 </div>
