@@ -100,8 +100,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
             );
             $orderby_sql = isset( $orderby_sql_map[ $orderby ] ) ? $orderby_sql_map[ $orderby ] : 'created_at';
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
             if ( 'ASC' === $order ) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Reading from custom plugin tables for list table output.
                 $items = $wpdb->get_results(
                     $wpdb->prepare(
                         'SELECT c.*, ci.product_id
@@ -121,6 +121,7 @@ class Claim_Desk_List_Table extends WP_List_Table {
                     )
                 );
             } else {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Reading from custom plugin tables for list table output.
                 $items = $wpdb->get_results(
                     $wpdb->prepare(
                         'SELECT c.*, ci.product_id
