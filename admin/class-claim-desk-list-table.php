@@ -247,7 +247,12 @@ class Claim_Desk_List_Table extends WP_List_Table {
         if ( isset( $_GET['claim'] ) ) {
             $claim_ids_raw = wp_unslash( $_GET['claim'] );
             if ( is_array( $claim_ids_raw ) ) {
-                $claim_ids = array_filter( array_map( 'absint', $claim_ids_raw ) );
+                $claim_ids = array_filter(
+                    array_map(
+                        'absint',
+                        array_map( 'sanitize_text_field', $claim_ids_raw )
+                    )
+                );
             }
         }
 
