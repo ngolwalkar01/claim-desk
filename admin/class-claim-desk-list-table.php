@@ -45,8 +45,8 @@ class Claim_Desk_List_Table extends WP_List_Table {
     public function prepare_items() {
         global $wpdb;
 
-        $table_name  = esc_sql( $wpdb->prefix . 'cd_claims' );
-        $table_items = esc_sql( $wpdb->prefix . 'cd_claim_items' );
+        $table_name  = $wpdb->prefix . 'cd_claims';
+        $table_items = $wpdb->prefix . 'cd_claim_items';
         
         $per_page = 20;
         $current_page = $this->get_pagenum();
@@ -73,7 +73,12 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         if ( false === $total_items ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $total_items = (int) $wpdb->get_var( "SELECT COUNT(id) FROM `{$table_name}`" );
+            $total_items = (int) $wpdb->get_var(
+                $wpdb->prepare(
+                    'SELECT COUNT(id) FROM %i',
+                    $table_name
+                )
+            );
             wp_cache_set( $cache_key_total, $total_items, 'claim-desk', 300 );
         }
         
@@ -89,28 +94,52 @@ class Claim_Desk_List_Table extends WP_List_Table {
 
         if ( false === $items ) {
             $orderby_sql_map = array(
-                'id'         => 'c.id',
-                'created_at' => 'c.created_at',
-                'status'     => 'c.status',
+                'id'         => 'id',
+                'created_at' => 'created_at',
+                'status'     => 'status',
             );
-            $orderby_sql = isset( $orderby_sql_map[ $orderby ] ) ? $orderby_sql_map[ $orderby ] : 'c.created_at';
+            $orderby_sql = isset( $orderby_sql_map[ $orderby ] ) ? $orderby_sql_map[ $orderby ] : 'created_at';
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $items = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT c.*, ci.product_id
-                    FROM `{$table_name}` c
-                    LEFT JOIN (
-                        SELECT claim_id, MAX(product_id) AS product_id
-                        FROM `{$table_items}`
-                        GROUP BY claim_id
-                    ) ci ON ci.claim_id = c.id
-                    ORDER BY {$orderby_sql} {$order}
-                    LIMIT %d OFFSET %d",
-                    $per_page,
-                    $offset
-                )
-            );
+            if ( 'ASC' === $order ) {
+                $items = $wpdb->get_results(
+                    $wpdb->prepare(
+                        'SELECT c.*, ci.product_id
+                        FROM %i AS c
+                        LEFT JOIN (
+                            SELECT claim_id, MAX(product_id) AS product_id
+                            FROM %i
+                            GROUP BY claim_id
+                        ) AS ci ON ci.claim_id = c.id
+                        ORDER BY %i ASC
+                        LIMIT %d OFFSET %d',
+                        $table_name,
+                        $table_items,
+                        $orderby_sql,
+                        $per_page,
+                        $offset
+                    )
+                );
+            } else {
+                $items = $wpdb->get_results(
+                    $wpdb->prepare(
+                        'SELECT c.*, ci.product_id
+                        FROM %i AS c
+                        LEFT JOIN (
+                            SELECT claim_id, MAX(product_id) AS product_id
+                            FROM %i
+                            GROUP BY claim_id
+                        ) AS ci ON ci.claim_id = c.id
+                        ORDER BY %i DESC
+                        LIMIT %d OFFSET %d',
+                        $table_name,
+                        $table_items,
+                        $orderby_sql,
+                        $per_page,
+                        $offset
+                    )
+                );
+            }
             wp_cache_set( $cache_key_items, $items, 'claim-desk', 300 );
         }
 
