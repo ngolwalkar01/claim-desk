@@ -245,14 +245,9 @@ class Claim_Desk_List_Table extends WP_List_Table {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $claim_ids = array();
         if ( isset( $_GET['claim'] ) ) {
-            $claim_ids_raw = wp_unslash( $_GET['claim'] );
+            $claim_ids_raw = map_deep( wp_unslash( $_GET['claim'] ), 'sanitize_text_field' );
             if ( is_array( $claim_ids_raw ) ) {
-                $claim_ids = array_filter(
-                    array_map(
-                        'absint',
-                        array_map( 'sanitize_text_field', $claim_ids_raw )
-                    )
-                );
+                $claim_ids = array_filter( array_map( 'absint', $claim_ids_raw ) );
             }
         }
 
