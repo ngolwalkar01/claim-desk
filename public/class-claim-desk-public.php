@@ -609,11 +609,13 @@ class Claim_Desk_Public {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT i.order_item_id, c.status, c.updated_at, c.id
-				FROM `{$items_table}` i
-				INNER JOIN `{$claims_table}` c ON c.id = i.claim_id
+				'SELECT i.order_item_id, c.status, c.updated_at, c.id
+				FROM %i AS i
+				INNER JOIN %i AS c ON c.id = i.claim_id
 				WHERE c.order_id = %d
-				ORDER BY c.updated_at DESC, c.id DESC",
+				ORDER BY c.updated_at DESC, c.id DESC',
+				$items_table,
+				$claims_table,
 				$order_id_safe
 			)
 		);
