@@ -83,15 +83,19 @@ class Claim_Desk_Public {
 	}
 
 	private function should_enqueue_public_assets() {
-		if ( function_exists( 'is_account_page' ) && is_account_page() ) {
-			return true;
-		}
+		$post = get_post();
 
-		if ( is_singular() ) {
-			$post = get_post();
-			if ( $post && has_shortcode( $post->post_content, 'claim_desk_wizard' ) ) {
-				return true;
-			}
+		if (
+			(
+				function_exists( 'is_account_page' ) &&
+				function_exists( 'is_wc_endpoint_url' ) &&
+				is_account_page() &&
+				is_wc_endpoint_url( 'view-order' )
+			)
+			||
+			( $post && has_shortcode( $post->post_content, 'claim_desk_wizard' ) )
+		) {
+			return true;
 		}
 
 		return false;
