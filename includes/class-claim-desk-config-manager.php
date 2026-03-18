@@ -178,7 +178,7 @@ class Claim_Desk_Config_Manager {
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
             $scopes_input = wp_unslash( $_POST['scopes'] );
             if ( is_string( $scopes_input ) ) {
-                $scopes_raw = sanitize_text_field( $scopes_input );
+                $scopes_raw = $scopes_input;
                 $scopes     = json_decode( $scopes_raw, true );
 
                 if ( is_array( $scopes ) ) {
