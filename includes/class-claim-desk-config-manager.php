@@ -175,7 +175,7 @@ class Claim_Desk_Config_Manager {
         // Save Scopes (Legacy)
         if ( isset( $_POST['scopes'] ) ) {
             // Read raw JSON safely, validate type, and sanitize every decoded value before use.
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized after json_decode in foreach loop
             $scopes_input = wp_unslash( $_POST['scopes'] );
             if ( is_string( $scopes_input ) ) {
                 $scopes_raw = $scopes_input;
@@ -252,7 +252,7 @@ class Claim_Desk_Config_Manager {
         // Save Resolutions
         if ( isset( $_POST['resolutions'] ) ) {
             // Read raw array safely, validate type, and sanitize each value before use.
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized after json_decode in foreach loop
             $resolutions_input = wp_unslash( $_POST['resolutions'] );
 
             $resolutions = array();
@@ -270,7 +270,7 @@ class Claim_Desk_Config_Manager {
         // Save Problems
         if ( isset( $_POST['problems'] ) ) {
             // Read raw JSON safely, decode it, and sanitize each item before use.
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized after json_decode in foreach loop
             $problems_input = wp_unslash( $_POST['problems'] );
             if ( is_string( $problems_input ) ) {
                 $problems_raw = $problems_input;
@@ -301,7 +301,7 @@ class Claim_Desk_Config_Manager {
         // Save Conditions
         if ( isset( $_POST['conditions'] ) ) {
             // Read raw JSON safely, decode it, and sanitize each item before use.
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized after json_decode in foreach loop
             $conditions_input = wp_unslash( $_POST['conditions'] );
             if ( is_string( $conditions_input ) ) {
                 $conditions_raw = $conditions_input;
@@ -332,7 +332,7 @@ class Claim_Desk_Config_Manager {
         // Save Claim Window
         if ( isset( $_POST['claim_window'] ) ) {
             // Read raw array safely, validate type, and sanitize each value before use.
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized after json_decode in foreach loop
             $claim_window_input = wp_unslash( $_POST['claim_window'] );
             $claim_window     = array(
                 'mode' => 'limited_days',
@@ -363,7 +363,7 @@ class Claim_Desk_Config_Manager {
         // Save Reminder Settings
         if ( isset( $_POST['reminder_settings'] ) ) {
             // Read raw array safely, validate type, and sanitize each value before use.
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized after json_decode in foreach loop
             $reminder_input = wp_unslash( $_POST['reminder_settings'] );
             $reminder     = array(
                 'enabled' => false,
