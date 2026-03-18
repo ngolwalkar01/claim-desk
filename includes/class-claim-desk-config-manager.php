@@ -251,74 +251,104 @@ class Claim_Desk_Config_Manager {
 
         // Save Resolutions
         if ( isset( $_POST['resolutions'] ) ) {
-            // Read raw array safely, then normalize values.
+            // Read raw array safely, validate type, and sanitize each value before use.
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            $resolutions_raw = wp_unslash( $_POST['resolutions'] );
+            $resolutions_input = wp_unslash( $_POST['resolutions'] );
 
             $resolutions = array();
-            if ( is_array( $resolutions_raw ) ) {
-                $resolutions = array_map(
-                    static function ( $val ) {
-                        $val = sanitize_text_field( (string) $val );
-                        return ( 'true' === $val || '1' === $val );
-                    },
-                    $resolutions_raw
-                );
+            if ( is_array( $resolutions_input ) ) {
+                foreach ( $resolutions_input as $resolution_key => $resolution_value ) {
+                    $sanitized_key = sanitize_key( is_string( $resolution_key ) ? $resolution_key : '' );
+                    $sanitized_val = sanitize_text_field( is_string( $resolution_value ) ? $resolution_value : '' );
+
+                    $resolutions[ $sanitized_key ] = ( 'true' === $sanitized_val || '1' === $sanitized_val );
+                }
             }
             update_option( 'claim_desk_resolutions', $resolutions );
         }
 
         // Save Problems
         if ( isset( $_POST['problems'] ) ) {
-            // Read raw JSON safely, then sanitize decoded structure below.
+            // Read raw JSON safely, decode it, and sanitize each item before use.
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            $problems_raw = (string) wp_unslash( $_POST['problems'] );
-            $problems     = json_decode( $problems_raw, true );
-            if ( is_array( $problems ) ) {
-                $clean_problems = array_map( function($p) {
-                    return array(
-                        'value' => sanitize_title( $p['value'] ),
-                        'label' => sanitize_text_field( $p['label'] )
-                    );
-                }, $problems );
-                update_option( 'claim_desk_problems', $clean_problems );
+            $problems_input = wp_unslash( $_POST['problems'] );
+            if ( is_string( $problems_input ) ) {
+                $problems_raw = $problems_input;
+                $problems     = json_decode( $problems_raw, true );
+
+                if ( is_array( $problems ) ) {
+                    $clean_problems = array();
+
+                    foreach ( $problems as $problem ) {
+                        if ( ! is_array( $problem ) ) {
+                            continue;
+                        }
+
+                        $problem_value_raw = isset( $problem['value'] ) ? wp_unslash( $problem['value'] ) : '';
+                        $problem_label_raw = isset( $problem['label'] ) ? wp_unslash( $problem['label'] ) : '';
+
+                        $clean_problems[] = array(
+                            'value' => sanitize_title( is_string( $problem_value_raw ) ? $problem_value_raw : '' ),
+                            'label' => sanitize_text_field( is_string( $problem_label_raw ) ? $problem_label_raw : '' ),
+                        );
+                    }
+
+                    update_option( 'claim_desk_problems', $clean_problems );
+                }
             }
         }
 
         // Save Conditions
         if ( isset( $_POST['conditions'] ) ) {
-            // Read raw JSON safely, then sanitize decoded structure below.
+            // Read raw JSON safely, decode it, and sanitize each item before use.
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            $conditions_raw = (string) wp_unslash( $_POST['conditions'] );
-            $conditions     = json_decode( $conditions_raw, true );
-            if ( is_array( $conditions ) ) {
-                $clean_conditions = array_map( function($c) {
-                    return array(
-                        'value' => sanitize_title( $c['value'] ),
-                        'label' => sanitize_text_field( $c['label'] )
-                    );
-                }, $conditions );
-                update_option( 'claim_desk_conditions', $clean_conditions );
+            $conditions_input = wp_unslash( $_POST['conditions'] );
+            if ( is_string( $conditions_input ) ) {
+                $conditions_raw = $conditions_input;
+                $conditions     = json_decode( $conditions_raw, true );
+
+                if ( is_array( $conditions ) ) {
+                    $clean_conditions = array();
+
+                    foreach ( $conditions as $condition ) {
+                        if ( ! is_array( $condition ) ) {
+                            continue;
+                        }
+
+                        $condition_value_raw = isset( $condition['value'] ) ? wp_unslash( $condition['value'] ) : '';
+                        $condition_label_raw = isset( $condition['label'] ) ? wp_unslash( $condition['label'] ) : '';
+
+                        $clean_conditions[] = array(
+                            'value' => sanitize_title( is_string( $condition_value_raw ) ? $condition_value_raw : '' ),
+                            'label' => sanitize_text_field( is_string( $condition_label_raw ) ? $condition_label_raw : '' ),
+                        );
+                    }
+
+                    update_option( 'claim_desk_conditions', $clean_conditions );
+                }
             }
         }
 
         // Save Claim Window
         if ( isset( $_POST['claim_window'] ) ) {
-            // Read raw array safely, then sanitize values below.
+            // Read raw array safely, validate type, and sanitize each value before use.
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            $claim_window_raw = wp_unslash( $_POST['claim_window'] );
+            $claim_window_input = wp_unslash( $_POST['claim_window'] );
             $claim_window     = array(
                 'mode' => 'limited_days',
                 'days' => 30,
             );
 
-            if ( is_array( $claim_window_raw ) ) {
-                $mode = isset( $claim_window_raw['mode'] ) ? sanitize_key( (string) $claim_window_raw['mode'] ) : 'limited_days';
+            if ( is_array( $claim_window_input ) ) {
+                $mode_raw = isset( $claim_window_input['mode'] ) ? wp_unslash( $claim_window_input['mode'] ) : 'limited_days';
+                $days_raw = isset( $claim_window_input['days'] ) ? $claim_window_input['days'] : 30;
+
+                $mode = sanitize_key( is_string( $mode_raw ) ? $mode_raw : 'limited_days' );
                 if ( ! in_array( $mode, array( 'limited_days', 'no_limit', 'not_allowed' ), true ) ) {
                     $mode = 'limited_days';
                 }
 
-                $days = isset( $claim_window_raw['days'] ) ? absint( $claim_window_raw['days'] ) : 30;
+                $days = absint( $days_raw );
                 if ( $days < 1 ) {
                     $days = 1;
                 }
@@ -332,23 +362,27 @@ class Claim_Desk_Config_Manager {
 
         // Save Reminder Settings
         if ( isset( $_POST['reminder_settings'] ) ) {
-            // Read raw array safely, then sanitize values below.
+            // Read raw array safely, validate type, and sanitize each value before use.
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            $reminder_raw = wp_unslash( $_POST['reminder_settings'] );
+            $reminder_input = wp_unslash( $_POST['reminder_settings'] );
             $reminder     = array(
                 'enabled' => false,
                 'delay' => '3',
                 'custom_days' => 3,
             );
 
-            if ( is_array( $reminder_raw ) ) {
-                $enabled = isset( $reminder_raw['enabled'] ) ? sanitize_text_field( (string) $reminder_raw['enabled'] ) : '';
-                $delay   = isset( $reminder_raw['delay'] ) ? sanitize_key( (string) $reminder_raw['delay'] ) : '3';
+            if ( is_array( $reminder_input ) ) {
+                $enabled_raw     = isset( $reminder_input['enabled'] ) ? wp_unslash( $reminder_input['enabled'] ) : '';
+                $delay_raw       = isset( $reminder_input['delay'] ) ? wp_unslash( $reminder_input['delay'] ) : '3';
+                $custom_days_raw = isset( $reminder_input['custom_days'] ) ? $reminder_input['custom_days'] : 3;
+
+                $enabled = sanitize_text_field( is_string( $enabled_raw ) ? $enabled_raw : '' );
+                $delay   = sanitize_key( is_string( $delay_raw ) ? $delay_raw : '3' );
                 if ( ! in_array( $delay, array( '1', '2', '3', '7', 'custom' ), true ) ) {
                     $delay = '3';
                 }
 
-                $custom_days = isset( $reminder_raw['custom_days'] ) ? absint( $reminder_raw['custom_days'] ) : 3;
+                $custom_days = absint( $custom_days_raw );
                 if ( $custom_days < 1 ) {
                     $custom_days = 1;
                 }
