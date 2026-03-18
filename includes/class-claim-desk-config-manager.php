@@ -189,9 +189,9 @@ class Claim_Desk_Config_Manager {
                             continue;
                         }
 
-                        $scope_slug_raw  = isset( $scope['slug'] ) ? wp_unslash( $scope['slug'] ) : '';
-                        $scope_label_raw = isset( $scope['label'] ) ? wp_unslash( $scope['label'] ) : '';
-                        $scope_icon_raw  = isset( $scope['icon'] ) ? wp_unslash( $scope['icon'] ) : '';
+                        $scope_slug_raw  = isset( $scope['slug'] ) ? $scope['slug'] : '';
+                        $scope_label_raw = isset( $scope['label'] ) ? $scope['label'] : '';
+                        $scope_icon_raw  = isset( $scope['icon'] ) ? $scope['icon'] : '';
 
                         $slug  = sanitize_key( is_string( $scope_slug_raw ) ? $scope_slug_raw : '' );
                         $label = sanitize_text_field( is_string( $scope_label_raw ) ? $scope_label_raw : '' );
@@ -211,8 +211,8 @@ class Claim_Desk_Config_Manager {
                                     continue;
                                 }
 
-                                $reason_slug_raw  = isset( $reason['slug'] ) ? wp_unslash( $reason['slug'] ) : '';
-                                $reason_label_raw = isset( $reason['label'] ) ? wp_unslash( $reason['label'] ) : '';
+                                $reason_slug_raw  = isset( $reason['slug'] ) ? $reason['slug'] : '';
+                                $reason_label_raw = isset( $reason['label'] ) ? $reason['label'] : '';
 
                                 $clean_scope['reasons'][] = array(
                                     'slug'  => sanitize_key( is_string( $reason_slug_raw ) ? $reason_slug_raw : '' ),
@@ -227,9 +227,9 @@ class Claim_Desk_Config_Manager {
                                     continue;
                                 }
 
-                                $field_slug_raw     = isset( $field['slug'] ) ? wp_unslash( $field['slug'] ) : '';
-                                $field_label_raw    = isset( $field['label'] ) ? wp_unslash( $field['label'] ) : '';
-                                $field_type_raw     = isset( $field['type'] ) ? wp_unslash( $field['type'] ) : '';
+                                $field_slug_raw     = isset( $field['slug'] ) ? $field['slug'] : '';
+                                $field_label_raw    = isset( $field['label'] ) ? $field['label'] : '';
+                                $field_type_raw     = isset( $field['type'] ) ? $field['type'] : '';
                                 $field_required_raw = isset( $field['required'] ) ? $field['required'] : false;
 
                                 $clean_scope['fields'][] = array(
@@ -284,8 +284,8 @@ class Claim_Desk_Config_Manager {
                             continue;
                         }
 
-                        $problem_value_raw = isset( $problem['value'] ) ? wp_unslash( $problem['value'] ) : '';
-                        $problem_label_raw = isset( $problem['label'] ) ? wp_unslash( $problem['label'] ) : '';
+                        $problem_value_raw = isset( $problem['value'] ) ? $problem['value'] : '';
+                        $problem_label_raw = isset( $problem['label'] ) ? $problem['label'] : '';
 
                         $clean_problems[] = array(
                             'value' => sanitize_title( is_string( $problem_value_raw ) ? $problem_value_raw : '' ),
@@ -315,8 +315,8 @@ class Claim_Desk_Config_Manager {
                             continue;
                         }
 
-                        $condition_value_raw = isset( $condition['value'] ) ? wp_unslash( $condition['value'] ) : '';
-                        $condition_label_raw = isset( $condition['label'] ) ? wp_unslash( $condition['label'] ) : '';
+                        $condition_value_raw = isset( $condition['value'] ) ? $condition['value'] : '';
+                        $condition_label_raw = isset( $condition['label'] ) ? $condition['label'] : '';
 
                         $clean_conditions[] = array(
                             'value' => sanitize_title( is_string( $condition_value_raw ) ? $condition_value_raw : '' ),
@@ -340,7 +340,7 @@ class Claim_Desk_Config_Manager {
             );
 
             if ( is_array( $claim_window_input ) ) {
-                $mode_raw = isset( $claim_window_input['mode'] ) ? wp_unslash( $claim_window_input['mode'] ) : 'limited_days';
+                $mode_raw = isset( $claim_window_input['mode'] ) ? $claim_window_input['mode'] : 'limited_days';
                 $days_raw = isset( $claim_window_input['days'] ) ? $claim_window_input['days'] : 30;
 
                 $mode = sanitize_key( is_string( $mode_raw ) ? $mode_raw : 'limited_days' );
@@ -372,8 +372,8 @@ class Claim_Desk_Config_Manager {
             );
 
             if ( is_array( $reminder_input ) ) {
-                $enabled_raw     = isset( $reminder_input['enabled'] ) ? wp_unslash( $reminder_input['enabled'] ) : '';
-                $delay_raw       = isset( $reminder_input['delay'] ) ? wp_unslash( $reminder_input['delay'] ) : '3';
+                $enabled_raw     = isset( $reminder_input['enabled'] ) ? $reminder_input['enabled'] : '';
+                $delay_raw       = isset( $reminder_input['delay'] ) ? $reminder_input['delay'] : '3';
                 $custom_days_raw = isset( $reminder_input['custom_days'] ) ? $reminder_input['custom_days'] : 3;
 
                 $enabled = sanitize_text_field( is_string( $enabled_raw ) ? $enabled_raw : '' );
