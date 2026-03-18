@@ -174,33 +174,78 @@ class Claim_Desk_Config_Manager {
 
         // Save Scopes (Legacy)
         if ( isset( $_POST['scopes'] ) ) {
-            // Read raw JSON safely, then sanitize decoded structure below.
+            // Read raw JSON safely, validate type, and sanitize every decoded value before use.
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            $scopes_raw = (string) wp_unslash( $_POST['scopes'] );
-            $scopes = json_decode( $scopes_raw, true );
-            if ( is_array( $scopes ) ) {
-                 // Sanitize legacy scopes structure
-                 $clean_scopes = array();
-                 foreach ( $scopes as $scope ) {
-                     $slug = sanitize_key( $scope['slug'] );
-                     $clean_scopes[ $slug ] = array(
-                         'slug'    => $slug,
-                         'label'   => sanitize_text_field( $scope['label'] ),
-                         'icon'    => sanitize_html_class( $scope['icon'] ),
-                         'reasons' => isset($scope['reasons']) ? array_map(function($r){
-                             return array('slug'=>sanitize_key($r['slug']), 'label'=>sanitize_text_field($r['label']));
-                         }, $scope['reasons']) : [],
-                         'fields'  => isset($scope['fields']) ? array_map(function($f){
-                             return array(
-                                 'slug'=>sanitize_key($f['slug']), 
-                                 'label'=>sanitize_text_field($f['label']),
-                                 'type'=>sanitize_key($f['type']),
-                                 'required'=>!empty($f['required'])
-                             );
-                         }, $scope['fields']) : []
-                     );
-                 }
-                 update_option( self::OPTION_SCOPES, $clean_scopes );
+            $scopes_input = wp_unslash( $_POST['scopes'] );
+            if ( is_string( $scopes_input ) ) {
+                $scopes_raw = sanitize_text_field( $scopes_input );
+                $scopes     = json_decode( $scopes_raw, true );
+
+                if ( is_array( $scopes ) ) {
+                    $clean_scopes = array();
+
+                    foreach ( $scopes as $scope ) {
+                        if ( ! is_array( $scope ) ) {
+                            continue;
+                        }
+
+                        $scope_slug_raw  = isset( $scope['slug'] ) ? wp_unslash( $scope['slug'] ) : '';
+                        $scope_label_raw = isset( $scope['label'] ) ? wp_unslash( $scope['label'] ) : '';
+                        $scope_icon_raw  = isset( $scope['icon'] ) ? wp_unslash( $scope['icon'] ) : '';
+
+                        $slug  = sanitize_key( is_string( $scope_slug_raw ) ? $scope_slug_raw : '' );
+                        $label = sanitize_text_field( is_string( $scope_label_raw ) ? $scope_label_raw : '' );
+                        $icon  = sanitize_text_field( is_string( $scope_icon_raw ) ? $scope_icon_raw : '' );
+
+                        $clean_scope = array(
+                            'slug'    => $slug,
+                            'label'   => $label,
+                            'icon'    => $icon,
+                            'reasons' => array(),
+                            'fields'  => array(),
+                        );
+
+                        if ( isset( $scope['reasons'] ) && is_array( $scope['reasons'] ) ) {
+                            foreach ( $scope['reasons'] as $reason ) {
+                                if ( ! is_array( $reason ) ) {
+                                    continue;
+                                }
+
+                                $reason_slug_raw  = isset( $reason['slug'] ) ? wp_unslash( $reason['slug'] ) : '';
+                                $reason_label_raw = isset( $reason['label'] ) ? wp_unslash( $reason['label'] ) : '';
+
+                                $clean_scope['reasons'][] = array(
+                                    'slug'  => sanitize_key( is_string( $reason_slug_raw ) ? $reason_slug_raw : '' ),
+                                    'label' => sanitize_text_field( is_string( $reason_label_raw ) ? $reason_label_raw : '' ),
+                                );
+                            }
+                        }
+
+                        if ( isset( $scope['fields'] ) && is_array( $scope['fields'] ) ) {
+                            foreach ( $scope['fields'] as $field ) {
+                                if ( ! is_array( $field ) ) {
+                                    continue;
+                                }
+
+                                $field_slug_raw     = isset( $field['slug'] ) ? wp_unslash( $field['slug'] ) : '';
+                                $field_label_raw    = isset( $field['label'] ) ? wp_unslash( $field['label'] ) : '';
+                                $field_type_raw     = isset( $field['type'] ) ? wp_unslash( $field['type'] ) : '';
+                                $field_required_raw = isset( $field['required'] ) ? $field['required'] : false;
+
+                                $clean_scope['fields'][] = array(
+                                    'slug'     => sanitize_key( is_string( $field_slug_raw ) ? $field_slug_raw : '' ),
+                                    'label'    => sanitize_text_field( is_string( $field_label_raw ) ? $field_label_raw : '' ),
+                                    'type'     => sanitize_key( is_string( $field_type_raw ) ? $field_type_raw : '' ),
+                                    'required' => ! empty( $field_required_raw ),
+                                );
+                            }
+                        }
+
+                        $clean_scopes[ $slug ] = $clean_scope;
+                    }
+
+                    update_option( self::OPTION_SCOPES, $clean_scopes );
+                }
             }
         }
 
