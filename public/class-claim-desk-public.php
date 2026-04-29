@@ -129,6 +129,11 @@ class Claim_Desk_Public {
 			return;
 		}
 
+		// Do not render on the order-received page (thank you page).
+		if ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'order-received' ) ) {
+			return;
+		}
+
 		$claimed_map = $this->get_claimed_qty_map( $order->get_id() );
 		$status_map  = $this->get_claim_status_map( $order->get_id() );
 		$claim_window_status = $this->get_order_claim_window_status( $order );
