@@ -19,6 +19,7 @@
  * License:           GPL-2.0+
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Requires at least: 6.2
+ * Tested up to: 7.0
  * Requires PHP:      7.4
  * Text Domain:       claim-desk
  * Domain Path:       /languages
