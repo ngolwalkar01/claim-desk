@@ -1,11 +1,9 @@
 :root {
-	--cd-brand: #0a5c8f;
-	--cd-brand-hover: #084b74;
 	--cd-brand-soft: #e9f5fc;
 	--cd-bg-soft: #f5f8fb;
 	--cd-border: #d5dfe8;
-	--cd-text: #12263a;
-	--cd-muted: #506273;
+	--cd-text: inherit;
+	--cd-muted: inherit;
 	--cd-danger: #b91c1c;
 	--cd-success: #15803d;
 	--cd-warning: #b45309;
@@ -30,8 +28,9 @@
 
 .cd-order-claims__subtitle {
 	margin: 0.45rem 0 1.1rem;
-	color: var(--cd-muted);
+	color: inherit;
 	font-size: 0.96rem;
+	opacity: 0.85;
 }
 
 .cd-order-claims__list {
@@ -77,8 +76,9 @@
 }
 
 .cd-claim-row__meta {
-	color: var(--cd-muted);
+	color: inherit;
 	font-size: 0.9rem;
+	opacity: 0.9;
 }
 
 .cd-claim-row__badges {
@@ -134,33 +134,30 @@
 	border: 1px solid #c9d6e3;
 	border-radius: 10px;
 	background-color: #fff;
-	color: var(--cd-text);
+	color: inherit;
 }
 
 .cd-start-claim {
 	height: 40px;
-	border-radius: 10px !important;
-	font-weight: 600 !important;
+	border-radius: 10px;
+	font-weight: 600;
 }
 
 .cd-start-claim:disabled {
-	background: #dfe6ee !important;
-	border-color: #dfe6ee !important;
-	color: #8a98a6 !important;
+	background: #dfe6ee;
+	border-color: #dfe6ee;
+	color: #8a98a6;
 	pointer-events: none;
 }
 
 .cd-start-claim:not(:disabled),
 .cd-start-claim.is-active:not(:disabled) {
-	background: var(--cd-brand) !important;
-	border-color: var(--cd-brand) !important;
-	color: #fff !important;
+	color: inherit;
 }
 
 .cd-start-claim:not(:disabled):hover,
 .cd-start-claim.is-active:not(:disabled):hover {
-	background: var(--cd-brand-hover) !important;
-	border-color: var(--cd-brand-hover) !important;
+	color: inherit;
 }
 
 .cd-claim-row__notice {
@@ -257,7 +254,7 @@
 	border: 1px solid #c9d6e3;
 	border-radius: 10px;
 	background: #fff;
-	color: var(--cd-text);
+	color: inherit;
 	padding: 0.62rem 0.75rem;
 }
 
@@ -276,9 +273,9 @@
 .cd-upload-card:focus-visible,
 .cd-claim-type-card:focus-visible,
 .cd-claim-modal__close:focus-visible {
-	outline: 2px solid rgba(10, 92, 143, 0.25);
+	outline: 2px solid rgba(0, 0, 0, 0.16);
 	outline-offset: 1px;
-	border-color: var(--cd-brand);
+	border-color: currentColor;
 }
 
 .cd-claim-type-cards {
@@ -304,7 +301,7 @@
 .cd-claim-type-card__icon {
 	font-size: 1.2rem;
 	line-height: 1;
-	color: var(--cd-brand);
+	color: inherit;
 }
 
 .cd-claim-type-card__content {
@@ -320,7 +317,8 @@
 
 .cd-claim-type-card__detail {
 	font-size: 0.84rem;
-	color: var(--cd-muted);
+	color: inherit;
+	opacity: 0.86;
 }
 
 .cd-claim-type-card:hover {
@@ -330,9 +328,9 @@
 }
 
 .cd-claim-type-card.is-selected {
-	border-color: var(--cd-brand);
+	border-color: currentColor;
 	background: var(--cd-brand-soft);
-	box-shadow: inset 0 0 0 1px rgba(10, 92, 143, 0.15);
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 .cd-upload-card {
@@ -350,15 +348,15 @@
 
 .cd-upload-card:hover,
 .cd-upload-card:focus-visible {
-	border-color: var(--cd-brand);
-	box-shadow: 0 0 0 3px rgba(10, 92, 143, 0.12);
+	border-color: currentColor;
+	box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
 	outline: none;
 }
 
 .cd-upload-card__icon {
 	font-size: 1.25rem;
 	line-height: 1;
-	color: var(--cd-brand);
+	color: inherit;
 }
 
 .cd-upload-card__content {
@@ -374,7 +372,8 @@
 
 .cd-upload-card__detail {
 	font-size: 0.84rem;
-	color: var(--cd-muted);
+	color: inherit;
+	opacity: 0.86;
 }
 
 .cd-claim-files-preview {
@@ -437,7 +436,8 @@
 
 .cd-claim-review p {
 	margin: 0.22rem 0;
-	color: #2b4358;
+	color: inherit;
+	opacity: 0.92;
 }
 
 .cd-claim-modal__footer {
@@ -455,13 +455,11 @@
 }
 
 .cd-claim-modal__footer #cd-submit-claim {
-	background: var(--cd-brand) !important;
-	border-color: var(--cd-brand) !important;
+	color: inherit;
 }
 
 .cd-claim-modal__footer #cd-submit-claim:hover {
-	background: var(--cd-brand-hover) !important;
-	border-color: var(--cd-brand-hover) !important;
+	color: inherit;
 }
 
 .cd-claim-error {
