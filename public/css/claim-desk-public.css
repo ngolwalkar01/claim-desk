@@ -212,6 +212,7 @@
 }
 
 .cd-claim-modal__close {
+	appearance: none;
 	position: absolute;
 	right: 0.7rem;
 	top: 0.55rem;
@@ -224,6 +225,9 @@
 	background: #f9fbfc;
 	color: #31506d;
 	cursor: pointer;
+	padding: 0;
+	box-shadow: none;
+	text-decoration: none;
 }
 
 .cd-claim-modal__body {
@@ -285,6 +289,7 @@
 }
 
 .cd-claim-type-card {
+	appearance: none;
 	display: flex;
 	align-items: flex-start;
 	gap: 0.7rem;
@@ -295,6 +300,11 @@
 	border-radius: 12px;
 	background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
 	cursor: pointer;
+	color: inherit;
+	font: inherit;
+	line-height: inherit;
+	text-decoration: none;
+	box-shadow: none;
 	transition: transform 0.18s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -325,6 +335,10 @@
 	transform: translateY(-1px);
 	border-color: #9fc2da;
 	box-shadow: 0 8px 22px rgba(10, 55, 89, 0.12);
+}
+
+.cd-claim-type-card:active {
+	transform: translateY(0);
 }
 
 .cd-claim-type-card.is-selected {
