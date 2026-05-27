@@ -44,7 +44,6 @@
 #cd-order-claims button,
 #cd-order-claims .button,
 #cd-order-claims input,
-#cd-order-claims select,
 #cd-order-claims textarea {
 	appearance: none;
 	font: inherit;
@@ -52,6 +51,14 @@
 	text-decoration: none;
 	text-shadow: none;
 	box-shadow: none;
+}
+
+#cd-order-claims select,
+#cd-order-claims .cd-claim-qty {
+	appearance: auto;
+	-webkit-appearance: menulist;
+	-moz-appearance: menulist;
+	padding-right: 2rem;
 }
 
 .cd-order-claims__title {
@@ -167,9 +174,15 @@
 }
 
 #cd-order-claims .cd-start-claim {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	height: 40px;
+	min-height: 40px;
 	border-radius: 10px;
 	font-weight: 600;
+	line-height: 1;
+	white-space: nowrap;
 	padding: 0.52rem 0.9rem;
 	border: 1px solid var(--cd-btn-border);
 	background: var(--cd-btn-bg);
