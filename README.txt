@@ -4,7 +4,7 @@ Tags: woocommerce, return, exchange, refund, claim management
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 Requires Plugins: woocommerce
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -102,6 +102,12 @@ Currently, ClaimDesk is fully free. A Pro version may be released in future with
 
 == Changelog ==
 
+= 1.0.1 =
+Added compatibility support for WordPress 7.0
+Enhanced overall claim submission flow and user interface
+Improved backend admin experience with additional management features
+Improved plugin performance and usability
+
 = 1.0.0 =
 Initial release of ClaimDesk plugin.
 
@@ -109,4 +115,7 @@ Initial release of ClaimDesk plugin.
 
 = 1.0.0 =
 Initial stable release.
+
+= 1.0.1 =
+Improved compatibility with WordPress 7.0, enhanced claim workflow UI, and added new backend admin management features.
 
